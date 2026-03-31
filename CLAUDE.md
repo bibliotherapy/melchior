@@ -7,8 +7,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Melchior** — GMFCS Level Classification AI for children with cerebral palsy (ages 6 and under). Classifies GMFCS Levels 1-5 from multi-view video using 3D skeletal modeling, assistive device inference, and caregiver interaction analysis.
 
 - 24 patients, ~3,175 clips, 3 camera viewpoints (GoPro front / iPhone left / Galaxy right), 30fps
-- Server: 2x NVIDIA Tesla V100-DGXS-32GB, CUDA 12.4
 - Target: 80%+ classification accuracy
+
+### Server / GPU Environment
+
+| Spec | Value |
+|---|---|
+| GPUs | 2x NVIDIA Tesla V100-DGXS-32GB |
+| VRAM per GPU | 32GB |
+| CUDA | 12.4 |
+| Driver | 550.144.03 |
+
+**GPU usage policy for all code in this project:**
+
+- **Training:** Use `torch.nn.DataParallel` (DP) or `torch.nn.parallel.DistributedDataParallel` (DDP) across both GPUs. Prefer DDP with `torchrun` for training scripts. Default world size = 2.
+- **Inference / pose estimation:** Run on a single GPU (`cuda:0`). The second GPU can run parallel experiments or hyperparameter sweeps.
+- **Device selection:** Always use `torch.cuda.is_available()` checks. Never hardcode device indices without a config fallback. Use `configs/default.yaml` to set `device: cuda` and `num_gpus: 2`.
+- **DDP launch command:** `torchrun --nproc_per_node=2 scripts/05_train.py`
+- **Mixed precision:** Use `torch.amp.autocast('cuda')` + `GradScaler` for faster training and lower VRAM usage on V100.
+- **Batch size:** Scale per-GPU batch size so total batch = per_gpu_batch * num_gpus. Default per-GPU batch: 16 (total 32).
+- **Model saving:** Always save on rank 0 only when using DDP. Use `model.module.state_dict()` to unwrap DDP wrapper.
 
 ## Key Documentation
 
