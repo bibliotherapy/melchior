@@ -885,4 +885,4 @@ metadata_vector = [
 
 ---
 
-*Generated: 2026-03-20 | Updated: 2026-03-20 (Sections 14~17 추가: 환자별 동작 실측, Level간 변별 분석, 핵심 동작 종합표, 메타데이터 벡터)*
+*Generated: 2026-03-20 | Updated: 2026-03-31 (Sections 15.4~15.5 추가: GMFCS-E&R 기반 동작 질적 차이 기술서, 연령대별 Level 간 종합 구분점, Skeleton 기반 측정 가능 특성 매핑)*
