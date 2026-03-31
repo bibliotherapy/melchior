@@ -1,0 +1,86 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**Melchior** — GMFCS Level Classification AI for children with cerebral palsy (ages 6 and under). Classifies GMFCS Levels 1-5 from multi-view video using 3D skeletal modeling, assistive device inference, and caregiver interaction analysis.
+
+- 24 patients, ~3,175 clips, 3 camera viewpoints (GoPro front / iPhone left / Galaxy right), 30fps
+- Server: 2x NVIDIA Tesla V100-DGXS-32GB, CUDA 12.4
+- Target: 80%+ classification accuracy
+
+## Key Documentation
+
+| File | Purpose |
+|---|---|
+| `GMFCS_Classification_Comprehensive_Report_EN.md` | Full technical report: dataset, pipeline, movement analysis, quality descriptors |
+| `Assistive_Device_Integration_Implementation_Plan.md` | 6-phase implementation plan with code structure and pseudocode |
+| `docs/superpowers/specs/2026-03-31-assistive-device-integration-design.md` | Design spec: three-layer architecture for device/caregiver encoding |
+| `gmfcs.md` | GMFCS-E&R clinical classification reference |
+| `data/metadata/assistive_annotations.json` | Per-patient device/assistance annotations (partially filled, has TODOs) |
+
+## Architecture
+
+### Three-Layer Feature Architecture
+
+1. **Layer 1 — Enhanced Patient Skeleton:** 3D triangulated skeleton `(T, 17, 3)` + ~15 derived features per frame (wrist fixation index, arm swing amplitude, ankle ROM, CoM sway, etc.) that proxy for assistive device usage without object detection.
+
+2. **Layer 2 — Caregiver Interaction Skeleton:** Multi-person pose estimation detects both patient and caregiver. Interaction features (~10/frame): contact proximity, velocity correlation, movement independence score. The independence score is THE key signal for L4 vs L5 distinction.
+
+3. **Layer 3 — Assistive Context Vector:** 18D metadata vector extending the original 7D (sex, age, movement status) with walker type, AFO presence, assistance levels per movement.
+
+### Classification Pipeline
+
+```
+Multi-person 2D pose (MMPose RTMPose) → Camera calibration (Human Pose as Calibration Pattern)
+→ 3D triangulation (OpenCV, dual skeleton) → Feature extraction (Layers 1-3)
+→ Hierarchical 2-stage classification:
+    Stage 1: Ambulatory vs Non-ambulatory (binary)
+    Stage 2-A: L1 vs L2 vs L3 (walk quality, walker usage)
+    Stage 2-B: L4 vs L5 (caregiver assistance, side rolling independence)
+```
+
+### Model: Lite ST-GCN + Multi-Stream Fusion
+
+- Stream A: Lite ST-GCN (3 layers, 64ch, ~200K params) on raw skeleton → 128D
+- Stream B: Temporal mean+std pooling on skeleton features → 30D
+- Stream C: Temporal mean+std pooling on interaction features → 20D
+- Stream D: Context vector passthrough → 18D
+- Fusion: concat (~196D) → MLP(64) → classification head
+
+## Source Layout
+
+```
+src/pose/              # Multi-person 2D pose extraction + patient/caregiver identification
+src/calibration/       # Camera calibration via human pose correspondence
+src/triangulation/     # 3D triangulation for patient and caregiver
+src/features/          # Layer 1 skeleton features, Layer 2 interaction features, Layer 3 context vector
+src/model/             # Lite ST-GCN, multi-stream classifier, hierarchical training
+src/utils/             # Visualization, evaluation
+scripts/01-06_*.py     # Batch processing entry points (sequential pipeline)
+configs/default.yaml   # All hyperparameters and paths
+```
+
+## Data Conventions
+
+- **Patient-level splits only** — all clips from one patient in the same fold. No cross-patient leakage.
+- **Triplet = 3 synchronized viewpoints** of one movement: `{patient}_{movement}_{num}_{FV|LV|RV}.mp4`
+- **5 movements:** walk (w), crawl (cr), seated_to_standing (c_s), standing_to_seated (s_c), side_rolling (sr)
+- **Excluded:** static seated, run, jump (cause shortcut learning)
+- **data/ is gitignored** — raw videos and processed outputs stay local
+
+## GMFCS Level Discrimination Keys
+
+- **L1 vs L2:** Gait speed, symmetry, balance (subtle, same movement pattern)
+- **L2 vs L3:** Walker usage — detected via wrist fixation index + arm swing amplitude
+- **L3 vs L4:** Caregiver assistance level during walking and transitions
+- **L4 vs L5:** Movement independence score during side rolling (self-initiated vs caregiver-driven)
+
+## Auto-Backup
+
+`.claude/auto-backup.sh` automatically commits and pushes documentation changes on file edits. Excludes `data/` and `.claude/` directories.
+
+## Plans
+
+All implementation plans must be saved as standalone `.md` files in the project root directory, not only in Claude's internal `.claude/plans/` folder.
