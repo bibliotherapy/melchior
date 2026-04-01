@@ -44,4 +44,21 @@ data_root: /path/to/CP_dataset   # <-- set to actual server path
 
 ---
 
+## Phase 1: Manual Annotation (Layer 3 — Context Vector)
+
+**No server-specific steps.** Phase 1 is entirely local:
+
+1. **Manual annotation** — review video clips and fill in TODO fields in `data/metadata/assistive_annotations.json`
+2. **labels.json** — fill in `sex` (0=female, 1=male) and `age_months` for each patient in `data/metadata/labels.json`
+3. **Code** — `src/features/context_vector.py` runs on CPU with no GPU dependencies
+
+### Verify on server after transfer
+
+```bash
+python -m src.features.context_vector
+# Should print 18D vectors for L1/L3/L5 patients and confirm 24 patients encoded
+```
+
+---
+
 *Subsequent phases will be appended below as they are implemented.*
