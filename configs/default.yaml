@@ -1,0 +1,73 @@
+# Melchior — GMFCS Classification Configuration
+# Paths (relative for local dev, override on server)
+data_root: ./data
+raw_synced_dir: ${data_root}/raw_synced
+skeleton_2d_dir: ${data_root}/skeleton_2d
+calibration_dir: ${data_root}/calibration
+skeleton_3d_dir: ${data_root}/skeleton_3d
+features_dir: ${data_root}/features
+metadata_dir: ${data_root}/metadata
+
+# Pose estimation
+pose:
+  model: rtmpose-l  # RTMPose-Large (COCO 17-joint)
+  detector: rtmdet-m  # Person detector
+  device: cuda:0
+  batch_size: 16
+  confidence_threshold: 0.3
+
+# Person identification
+person_id:
+  method: height_ratio  # child vs adult by skeleton height
+  min_height_ratio: 1.3  # adult must be >= 1.3x child height
+  fallback: center_position  # use center-of-frame if ambiguous
+
+# Camera calibration
+calibration:
+  method: human_pose_calibration  # Takahashi et al. [5]
+  min_visible_joints: 8  # minimum joints visible for calibration
+  ransac_threshold: 5.0  # pixels
+  num_calibration_frames: 50  # frames used for calibration per patient
+
+# 3D triangulation
+triangulation:
+  method: dlt  # Direct Linear Transform via OpenCV
+  min_views: 2  # minimum camera views for triangulation
+  reprojection_threshold: 15.0  # pixels, for outlier rejection
+  bone_length_filter: true  # reject implausible bone lengths
+
+# Feature extraction
+features:
+  wfi_window_size: 15  # frames for Wrist Fixation Index sliding window
+  contact_threshold_m: 0.15  # meters, caregiver-patient contact threshold
+  fps: 30
+
+# Model
+model:
+  stgcn:
+    num_layers: 3
+    channels: [3, 64, 64, 128]
+    temporal_kernel: 9
+    dropout: 0.3
+    num_joints: 17
+  fusion:
+    hidden_dim: 64
+    dropout: 0.3
+  skeleton_feature_dim: 15  # Layer 1
+  interaction_feature_dim: 10  # Layer 2
+  context_vector_dim: 18  # Layer 3
+
+# Training
+training:
+  epochs: 100
+  batch_size: 32
+  lr: 0.001
+  weight_decay: 0.0001
+  scheduler: cosine
+  patience: 20  # early stopping
+  cv_folds: 6  # patient-level cross-validation (leave-4-out)
+  class_weight: balanced
+
+# GPU
+device: cuda
+num_gpus: 2
