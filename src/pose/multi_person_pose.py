@@ -60,6 +60,9 @@ class MultiPersonPoseExtractor:
             batch_size: Batch size for inference.
             confidence_threshold: Minimum keypoint confidence.
         """
+        if "cuda" in device and not torch.cuda.is_available():
+            logger.warning("CUDA not available, falling back to CPU")
+            device = "cpu"
         self.det_model = det_model
         self.pose_model = pose_model
         self.device = device
