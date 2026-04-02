@@ -151,7 +151,7 @@ def draw_verification_frame(frame, keypoints_dict, masks_dict=None,
                 (255, 255, 255), 1, cv2.LINE_AA)
 
     # Identity legend (right side)
-    legend_x = w - 300
+    legend_x = max(0, w - 300)
     for identity, color in [("child", IDENTITY_COLORS["child"]),
                             ("caregiver", IDENTITY_COLORS["caregiver"])]:
         if identity in keypoints_dict and keypoints_dict[identity] is not None:
