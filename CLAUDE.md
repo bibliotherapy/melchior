@@ -35,8 +35,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `GMFCS_Classification_Comprehensive_Report_EN.md` | Full technical report: dataset, pipeline, movement analysis, quality descriptors |
 | `Assistive_Device_Integration_Implementation_Plan.md` | 6-phase implementation plan with code structure and pseudocode |
 | `docs/superpowers/specs/2026-03-31-assistive-device-integration-design.md` | Design spec: three-layer architecture for device/caregiver encoding |
+| `docs/superpowers/specs/2026-04-02-sam2-guided-tracking-design.md` | Design spec: SAM2-guided person/walker tracking (supersedes auto height-ratio) |
+| `SAM2_Guided_Tracking_Pipeline_Plan.md` | Implementation plan for SAM2-guided tracking pipeline |
 | `gmfcs.md` | GMFCS-E&R clinical classification reference |
 | `data/metadata/assistive_annotations.json` | Per-patient device/assistance annotations (partially filled, has TODOs) |
+| `data/metadata/sam2_annotations.json` | Per-clip first-frame point annotations for SAM2 tracking |
 
 ## Architecture
 
