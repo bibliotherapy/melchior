@@ -152,46 +152,47 @@ class SAM2VideoTracker:
         num_frames = self._extract_frames_to_dir(video_path, tmp_frame_dir)
         logger.info("Extracted %d frames to %s", num_frames, tmp_frame_dir)
 
-        with torch.inference_mode():
-            state = self._predictor.init_state(video_path=str(tmp_frame_dir))
+        try:
+            with torch.inference_mode():
+                state = self._predictor.init_state(video_path=str(tmp_frame_dir))
 
-            # Add point prompts for each object
-            obj_id_to_name = {}
-            for obj_idx, (name, points) in enumerate(self._object_points.items(), start=1):
-                point_coords = np.array(points, dtype=np.float32)
-                point_labels = np.ones(len(points), dtype=np.int32)
+                # Add point prompts for each object
+                obj_id_to_name = {}
+                for obj_idx, (name, points) in enumerate(self._object_points.items(), start=1):
+                    point_coords = np.array(points, dtype=np.float32)
+                    point_labels = np.ones(len(points), dtype=np.int32)
 
-                _, _, _ = self._predictor.add_new_points_or_box(
-                    inference_state=state,
-                    frame_idx=self._frame_idx,
-                    obj_id=obj_idx,
-                    points=point_coords,
-                    labels=point_labels,
-                )
-                obj_id_to_name[obj_idx] = name
+                    _, _, _ = self._predictor.add_new_points_or_box(
+                        inference_state=state,
+                        frame_idx=self._frame_idx,
+                        obj_id=obj_idx,
+                        points=point_coords,
+                        labels=point_labels,
+                    )
+                    obj_id_to_name[obj_idx] = name
 
-            # Propagate through all frames
-            all_masks = {name: np.zeros((num_frames, *self._frame_size), dtype=bool)
-                         for name in self._object_points}
+                # Propagate through all frames
+                all_masks = {name: np.zeros((num_frames, *self._frame_size), dtype=bool)
+                             for name in self._object_points}
 
-            for frame_idx, obj_ids, masks in self._predictor.propagate_in_video(state):
-                for obj_id, mask in zip(obj_ids, masks):
-                    name = obj_id_to_name.get(obj_id)
-                    if name is not None:
-                        mask_np = (mask[0] > 0.0).cpu().numpy()
-                        if mask_np.shape != self._frame_size:
-                            mask_np = cv2.resize(
-                                mask_np.astype(np.uint8),
-                                (self._frame_size[1], self._frame_size[0]),
-                                interpolation=cv2.INTER_NEAREST,
-                            ).astype(bool)
-                        all_masks[name][frame_idx] = mask_np
+                for frame_idx, obj_ids, masks in self._predictor.propagate_in_video(state):
+                    for obj_id, mask in zip(obj_ids, masks):
+                        name = obj_id_to_name.get(obj_id)
+                        if name is not None:
+                            mask_np = (mask[0] > 0.0).cpu().numpy()
+                            if mask_np.shape != self._frame_size:
+                                mask_np = cv2.resize(
+                                    mask_np.astype(np.uint8),
+                                    (self._frame_size[1], self._frame_size[0]),
+                                    interpolation=cv2.INTER_NEAREST,
+                                ).astype(bool)
+                            all_masks[name][frame_idx] = mask_np
 
-            self._predictor.reset_state(state)
-
-        # Clean up temp frames
-        if tmp_frame_dir.exists():
-            shutil.rmtree(tmp_frame_dir)
+                self._predictor.reset_state(state)
+        finally:
+            # Always clean up temp frames, even on failure
+            if tmp_frame_dir.exists():
+                shutil.rmtree(tmp_frame_dir)
 
         self._masks = all_masks
         logger.info("Propagation complete: %s", {k: v.shape for k, v in all_masks.items()})
