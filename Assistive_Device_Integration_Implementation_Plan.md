@@ -441,12 +441,33 @@ Logs report how many clips used mask-guided vs height-ratio fallback.
 
 ### Step 2.5: Visual verification
 
-- Overlay detected skeletons on 2-3 sample clips per GMFCS level
-- Specifically verify:
-  - **Mask-guided clips:** Child skeleton correctly follows child mask throughout entire clip
-  - **L3 patient + walker:** Child skeleton is on the child, not confused with walker
-  - **L4/L5 patient + caregiver:** Both skeletons maintain correct identity during physical contact
-  - **Height-fallback clips:** Check if any clips without masks have incorrect assignment
+File: `src/utils/visualization.py` **(implemented)** — Skeleton overlay library
+File: `scripts/verify_2d_pose.py` **(implemented)** — Verification script
+
+**Functions in `visualization.py`:**
+- `draw_skeleton()` — COCO 17-joint skeleton overlay (limbs + colored keypoints)
+- `draw_mask_overlay()` — Semi-transparent SAM2 mask overlay
+- `draw_verification_frame()` — Composite frame with skeletons, masks, and HUD
+- `write_verification_video()` — Generator-based MP4 output via OpenCV
+
+**Usage:**
+```bash
+python scripts/verify_2d_pose.py                          # 2 samples per level
+python scripts/verify_2d_pose.py --patient kku             # all clips for patient
+python scripts/verify_2d_pose.py --clip kku_w_01_FV        # single clip
+python scripts/verify_2d_pose.py --level 3 --samples 3     # 3 L3 samples
+python scripts/verify_2d_pose.py --all                     # every clip
+python scripts/verify_2d_pose.py --video-dir data/raw      # override video source
+python scripts/verify_2d_pose.py --no-masks                # skip mask overlay
+```
+
+**Output:** `outputs/verification_2d/L{1-5}/{clip_id}_verify.mp4` + `summary.txt`
+
+**Specifically verify:**
+- **Mask-guided clips:** Child skeleton correctly follows child mask throughout entire clip
+- **L3 patient + walker:** Child skeleton is on the child, not confused with walker
+- **L4/L5 patient + caregiver:** Both skeletons maintain correct identity during physical contact
+- **Height-fallback clips:** Check if any clips without masks have incorrect assignment
 
 ---
 
