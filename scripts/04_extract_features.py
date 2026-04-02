@@ -191,6 +191,7 @@ def main():
         # Save all features
         save_features(features_dir, clip_id, {
             "skeleton_features": layer1_features,
+            "movement_quality_features": movement_quality_features,
             "interaction_features": layer2_features,
             "context_vector": context_vec,
             "walker_features": walker_feats,
