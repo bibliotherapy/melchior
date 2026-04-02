@@ -28,6 +28,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.tracking.sam2_tracker import SAM2VideoTracker
+from src.utils.naming import clip_id_to_patient
 
 
 def load_config(config_path):
@@ -38,18 +39,6 @@ def load_config(config_path):
 def load_annotations(annotations_path):
     with open(annotations_path) as f:
         return json.load(f)
-
-
-def clip_id_to_patient(clip_id):
-    """Extract patient ID from clip ID (e.g., 'kku_w_01_FV' -> 'kku')."""
-    parts = clip_id.split("_")
-    # Patient ID is everything before the movement code
-    # Movements: w, cr, c_s, s_c, sr
-    movement_codes = {"w", "cr", "c", "s", "sr"}
-    for i, part in enumerate(parts):
-        if part in movement_codes:
-            return "_".join(parts[:i])
-    return parts[0]
 
 
 def get_object_points(annotation):
