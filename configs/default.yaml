@@ -16,11 +16,19 @@ pose:
   batch_size: 16
   confidence_threshold: 0.3
 
-# Person identification
+# SAM2 video object tracking
+tracking:
+  model: sam2_hiera_l
+  checkpoint: checkpoints/sam2_hiera_large.pt
+  device: cuda:0
+  mask_output_dir: data/processed/masks/
+  annotations_path: data/metadata/sam2_annotations.json
+
+# Person identification (mask-guided primary, height-ratio fallback)
 person_id:
-  method: height_ratio  # child vs adult by skeleton height
-  min_height_ratio: 1.3  # adult must be >= 1.3x child height
-  fallback: center_position  # use center-of-frame if ambiguous
+  method: mask_guided  # SAM2 masks primary, height_ratio fallback
+  min_height_ratio: 1.3  # fallback: adult must be >= 1.3x child height
+  fallback: center_position  # use center-of-frame if still ambiguous
 
 # Camera calibration
 calibration:
