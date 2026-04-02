@@ -64,9 +64,11 @@ _REGION_UPPER_LIMB = [LEFT_ELBOW, RIGHT_ELBOW, LEFT_WRIST, RIGHT_WRIST]
 _REGION_LOWER_LIMB = [LEFT_KNEE, RIGHT_KNEE, LEFT_ANKLE, RIGHT_ANKLE]
 
 # Default contact threshold in torso-length units.
-# 0.15m physical / ~0.35m child torso ≈ 0.4 torso lengths.
+# Config provides contact_threshold_m (default 0.15m). We convert to
+# torso-length-relative units: 0.15m / ~0.35m child torso ≈ 0.4.
 # Since 3D coordinates have scale ambiguity, we work in relative units.
-DEFAULT_CONTACT_THRESHOLD = 0.4
+DEFAULT_CONTACT_THRESHOLD_REL = 0.4
+_ASSUMED_TORSO_M = 0.35  # approximate child torso length in meters
 
 # Rolling window for velocity correlation (frames)
 DEFAULT_CORR_WINDOW = 30
