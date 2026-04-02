@@ -402,16 +402,19 @@ def extract_interaction_features(child_3d, caregiver_3d, config=None):
         return zero_features
     torso_len = _torso_length(child_3d, child_valid)
 
+    # Pre-compute full pairwise distance matrix (vectorized, computed once)
+    dist_matrix = _full_distance_matrix(caregiver_3d, child_3d)
+
     # Pre-compute contact flags (used by multiple features)
     contact_flags = _compute_contact_flags(
-        caregiver_3d, child_3d, torso_len, cg_present, contact_thresh
+        dist_matrix, torso_len, cg_present, contact_thresh
     )
 
     # Compute all 10 features
     f0 = _compute_caregiver_present(caregiver_3d)
-    f1 = _compute_min_hand_body_distance(caregiver_3d, child_3d, torso_len, cg_present)
+    f1 = _compute_min_hand_body_distance(dist_matrix, torso_len, cg_present)
     f2 = _compute_contact_point_count(
-        caregiver_3d, child_3d, torso_len, cg_present, contact_thresh
+        dist_matrix, torso_len, cg_present, contact_thresh
     )
     f3 = _compute_contact_duration_ratio(contact_flags)
     f4 = _compute_velocity_correlation(
@@ -421,7 +424,7 @@ def extract_interaction_features(child_3d, caregiver_3d, config=None):
         child_3d, contact_flags, cg_present, torso_len, fps
     )
     f6_f9 = _compute_contact_body_region(
-        caregiver_3d, child_3d, torso_len, cg_present, contact_thresh
+        dist_matrix, torso_len, cg_present, contact_thresh
     )
 
     # Stack: (T, 10)
