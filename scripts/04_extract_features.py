@@ -161,6 +161,12 @@ def main():
         # Layer 1: Skeleton features from 3D keypoints
         layer1_features = extract_skeleton_features(child_kp_3d, features_cfg)
 
+        # Layer 1 extended: Movement quality features (per-clip summary)
+        movement_type = clip_id_to_movement(clip_id)
+        movement_quality_features = extract_movement_quality_features(
+            child_kp_3d, movement_type, features_cfg
+        )
+
         # Layer 2: Interaction features from 3D keypoints (placeholder)
         # TODO: implement interaction_features.extract_interaction_features(child_kp_3d, caregiver_kp_3d)
         layer2_features = np.zeros((T, 10), dtype=np.float32)
