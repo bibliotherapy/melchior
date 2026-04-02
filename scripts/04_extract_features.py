@@ -27,21 +27,12 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.features.context_vector import ContextVectorEncoder
 from src.features.walker_features import extract_walker_features
 from src.tracking.sam2_tracker import SAM2VideoTracker
+from src.utils.naming import clip_id_to_patient
 
 
 def load_config(config_path):
     with open(config_path) as f:
         return yaml.safe_load(f)
-
-
-def clip_id_to_patient(clip_id):
-    """Extract patient ID from clip ID."""
-    parts = clip_id.split("_")
-    movement_codes = {"w", "cr", "c", "s", "sr"}
-    for i, part in enumerate(parts):
-        if part in movement_codes:
-            return "_".join(parts[:i])
-    return parts[0]
 
 
 def load_3d_skeleton(skeleton_3d_dir, clip_id):
@@ -51,6 +42,22 @@ def load_3d_skeleton(skeleton_3d_dir, clip_id):
         Dict with 'child' and 'caregiver' arrays of shape (T, 17, 3).
     """
     path = Path(skeleton_3d_dir) / f"{clip_id}.npz"
+    if not path.exists():
+        return None
+    data = np.load(str(path))
+    return {k: data[k] for k in data.files}
+
+
+def load_2d_keypoints(skeleton_2d_dir, clip_id):
+    """Load 2D keypoints for a clip (pixel coordinates).
+
+    Walker spatial features require 2D pixel-space keypoints to match
+    SAM2 masks, not 3D triangulated coordinates.
+
+    Returns:
+        Dict with 'child' and 'caregiver' arrays of shape (T, 17, 3).
+    """
+    path = Path(skeleton_2d_dir) / f"{clip_id}.npz"
     if not path.exists():
         return None
     data = np.load(str(path))
