@@ -147,13 +147,14 @@ class MultiPersonPoseExtractor:
             # Detect all persons
             all_skeletons = self.extract_frame(frame)
 
-            # Get masks for this frame
+            # Get masks for this frame (use frame_idx, not out_idx, since
+            # mask arrays are indexed by original video frame number)
             frame_masks = None
             if person_masks is not None:
                 frame_masks = {}
                 for name, mask_array in person_masks.items():
-                    if name in ("child", "caregiver") and out_idx < mask_array.shape[0]:
-                        frame_masks[name] = mask_array[out_idx]
+                    if name in ("child", "caregiver") and frame_idx < mask_array.shape[0]:
+                        frame_masks[name] = mask_array[frame_idx]
 
             # Assign skeletons to identities
             assignments = identify_persons(
