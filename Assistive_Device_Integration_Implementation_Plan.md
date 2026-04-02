@@ -592,7 +592,7 @@ class SkeletonTriangulator:
 
 ### Step 3.3: Batch processing script
 
-File: `scripts/02_calibrate_cameras.py` + `scripts/03_triangulate_3d.py`
+File: `scripts/02_calibrate_cameras.py` **(implemented)** + `scripts/03_triangulate_3d.py` **(implemented)**
 
 **Calibration script:**
 ```python
