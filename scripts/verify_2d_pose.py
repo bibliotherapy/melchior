@@ -31,7 +31,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.tracking.sam2_tracker import SAM2VideoTracker
-from src.utils.naming import clip_id_to_patient, clip_id_to_view
+from src.utils.naming import clip_id_to_patient
 from src.utils.visualization import (
     draw_verification_frame,
     write_verification_video,
