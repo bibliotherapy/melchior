@@ -325,45 +325,29 @@ def _compute_movement_independence(child_3d, contact_flags, cg_present,
     return np.full(T, score, dtype=np.float64)
 
 
-def _compute_contact_body_region(caregiver_3d, child_3d, torso_len,
-                                  cg_present, contact_thresh):
+def _compute_contact_body_region(dist_matrix, torso_len, cg_present, contact_thresh):
     """I7-I10: Which patient body regions are in contact with caregiver.
+
+    Vectorized using the pre-computed distance matrix.
 
     Returns (T, 4): [head, trunk, upper_limb, lower_limb].
     Each channel is binary (1.0 if any joint in region is within threshold).
     """
-    T = child_3d.shape[0]
+    T = dist_matrix.shape[0]
     result = np.zeros((T, 4), dtype=np.float64)
 
+    thresh_abs = contact_thresh * torso_len  # (T,)
     regions = [_REGION_HEAD, _REGION_TRUNK, _REGION_UPPER_LIMB, _REGION_LOWER_LIMB]
 
-    for t in range(T):
-        if not cg_present[t]:
-            continue
+    for r_idx, region_joints in enumerate(regions):
+        # Slice distance matrix for this region's patient joints: (T, 17_cg, n_region)
+        region_dists = dist_matrix[:, :, region_joints]
+        # Minimum distance from any caregiver joint to any joint in this region
+        min_dist = np.min(region_dists.reshape(T, -1), axis=1)  # (T,)
+        result[:, r_idx] = (min_dist < thresh_abs).astype(np.float64)
 
-        thresh_abs = contact_thresh * torso_len[t]
-
-        # Active caregiver joints for this frame
-        cg_active = []
-        for j in range(17):
-            if np.linalg.norm(caregiver_3d[t, j]) > 1e-6:
-                cg_active.append(j)
-
-        if not cg_active:
-            continue
-
-        for r_idx, region_joints in enumerate(regions):
-            for pj in region_joints:
-                if np.linalg.norm(child_3d[t, pj]) < 1e-6:
-                    continue
-                for cj in cg_active:
-                    dist = np.linalg.norm(child_3d[t, pj] - caregiver_3d[t, cj])
-                    if dist < thresh_abs:
-                        result[t, r_idx] = 1.0
-                        break
-                if result[t, r_idx] > 0:
-                    break  # region already flagged
-
+    # Zero out frames without caregiver
+    result[~cg_present] = 0.0
     return result
 
 
