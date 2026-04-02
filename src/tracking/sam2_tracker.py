@@ -52,6 +52,9 @@ class SAM2VideoTracker:
             checkpoint: Path to SAM2 model checkpoint.
             device: Torch device string.
         """
+        if "cuda" in device and not torch.cuda.is_available():
+            logger.warning("CUDA not available, falling back to CPU")
+            device = "cpu"
         self.device = device
         self.model_cfg = model_cfg
         self.checkpoint = checkpoint
