@@ -187,79 +187,45 @@ def _compute_min_hand_body_distance(dist_matrix, torso_len, cg_present):
     return result
 
 
-def _compute_contact_point_count(caregiver_3d, child_3d, torso_len,
-                                  cg_present, contact_thresh):
+def _compute_contact_point_count(dist_matrix, torso_len, cg_present, contact_thresh):
     """I3: Fraction of patient joints within contact range of any caregiver joint.
 
     Args:
+        dist_matrix: (T, 17, 17) pairwise distances.
         contact_thresh: threshold in torso-length units.
 
     Returns:
         (T,) float array in [0, 1]. Normalized by 17 (total joints).
     """
-    T = child_3d.shape[0]
-    result = np.zeros(T, dtype=np.float64)
+    T = dist_matrix.shape[0]
+    # Per-patient-joint minimum distance to any caregiver joint: (T, 17)
+    min_dist_per_patient = np.min(dist_matrix, axis=1)  # min over caregiver joints
 
-    for t in range(T):
-        if not cg_present[t]:
-            continue
+    # Threshold: per-frame, in absolute coordinates
+    thresh_abs = contact_thresh * torso_len  # (T,)
 
-        # Find active caregiver joints (non-zero)
-        cg_active = []
-        for j in range(17):
-            if np.linalg.norm(caregiver_3d[t, j]) > 1e-6:
-                cg_active.append(j)
+    # Count patient joints in contact: min_dist < threshold
+    in_contact = min_dist_per_patient < thresh_abs[:, None]  # (T, 17)
+    count = in_contact.sum(axis=1).astype(np.float64)  # (T,)
 
-        if not cg_active:
-            continue
-
-        thresh_abs = contact_thresh * torso_len[t]
-        count = 0
-        for pj in range(17):
-            if np.linalg.norm(child_3d[t, pj]) < 1e-6:
-                continue  # skip missing patient joints
-            for cj in cg_active:
-                dist = np.linalg.norm(child_3d[t, pj] - caregiver_3d[t, cj])
-                if dist < thresh_abs:
-                    count += 1
-                    break  # this patient joint is in contact, move to next
-
-        result[t] = count / 17.0
-
+    result = count / 17.0
+    result[~cg_present] = 0.0
     return result
 
 
-def _compute_contact_flags(caregiver_3d, child_3d, torso_len,
-                            cg_present, contact_thresh):
-    """Compute per-frame binary contact flag (any patient joint in contact).
+def _compute_contact_flags(dist_matrix, torso_len, cg_present, contact_thresh):
+    """Compute per-frame binary contact flag (any joint pair in contact).
 
-    Used internally by contact_duration_ratio and movement_independence_score.
+    Vectorized using the pre-computed distance matrix.
 
     Returns:
         (T,) boolean array.
     """
-    T = child_3d.shape[0]
-    flags = np.zeros(T, dtype=bool)
-
-    for t in range(T):
-        if not cg_present[t]:
-            continue
-
-        thresh_abs = contact_thresh * torso_len[t]
-
-        for pj in range(17):
-            if np.linalg.norm(child_3d[t, pj]) < 1e-6:
-                continue
-            for cj in range(17):
-                if np.linalg.norm(caregiver_3d[t, cj]) < 1e-6:
-                    continue
-                dist = np.linalg.norm(child_3d[t, pj] - caregiver_3d[t, cj])
-                if dist < thresh_abs:
-                    flags[t] = True
-                    break
-            if flags[t]:
-                break
-
+    T = dist_matrix.shape[0]
+    # Minimum distance across all joint pairs per frame
+    min_dist = np.min(dist_matrix.reshape(T, -1), axis=1)  # (T,)
+    thresh_abs = contact_thresh * torso_len  # (T,)
+    flags = (min_dist < thresh_abs) & cg_present
     return flags
 
 
