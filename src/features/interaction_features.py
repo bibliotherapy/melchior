@@ -164,31 +164,25 @@ def _compute_caregiver_present(caregiver_3d):
     return _caregiver_present_mask(caregiver_3d).astype(np.float64)
 
 
-def _compute_min_hand_body_distance(caregiver_3d, child_3d, torso_len, cg_present):
-    """I2: Minimum distance from caregiver wrists to any patient joint.
+def _compute_min_hand_body_distance(dist_matrix, torso_len, cg_present):
+    """I2: Hand-body proximity — inverse of min caregiver-wrist-to-patient distance.
 
-    Normalized by torso length. Lower = closer contact.
+    Transformed: proximity = 1 / (1 + normalized_dist).
+    Higher = closer contact. Bounded in [0, 1].
 
     Returns:
-        (T,) float array in [0, ~inf), clipped to [0, 2].
+        (T,) float array in [0, 1].
     """
-    T = child_3d.shape[0]
-    result = np.zeros(T, dtype=np.float64)
+    # Caregiver wrists (indices 9, 10) to all patient joints
+    wrist_dists = dist_matrix[:, [LEFT_WRIST, RIGHT_WRIST], :]  # (T, 2, 17)
+    min_dist = np.min(wrist_dists, axis=(1, 2))  # (T,)
+    # Replace inf with large value
+    min_dist[np.isinf(min_dist)] = 1e6
 
-    caregiver_wrists = [LEFT_WRIST, RIGHT_WRIST]
-    all_patient_joints = list(range(17))
+    # Normalize by torso length and invert
+    norm_dist = min_dist / (torso_len + 1e-8)
+    result = 1.0 / (1.0 + norm_dist)
 
-    min_dist = _pairwise_joint_distances(
-        caregiver_3d, child_3d, caregiver_wrists, all_patient_joints
-    )
-
-    # Normalize by torso length
-    result = min_dist / (torso_len + 1e-8)
-    # Invert so higher = closer (more useful as contact signal)
-    # Use 1 / (1 + dist) transformation: 1 when touching, ~0 when far
-    result = 1.0 / (1.0 + result)
-
-    # Zero out frames without caregiver
     result[~cg_present] = 0.0
     return result
 
