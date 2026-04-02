@@ -93,9 +93,16 @@ CP/
 ```bash
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 pip install mmcv mmpose mmdet     # MMPose for multi-person pose estimation
+pip install segment-anything-2    # SAM2 for video object tracking
 pip install opencv-python-headless numpy scipy
 pip install pyyaml tqdm matplotlib seaborn
 pip install shap                   # For feature importance analysis
+```
+
+**Download SAM2 checkpoint:**
+```bash
+mkdir -p checkpoints/
+wget -P checkpoints/ https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt
 ```
 
 **Verify:**
@@ -103,6 +110,7 @@ pip install shap                   # For feature importance analysis
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.device_count())"
 # Expected: True 2
 python -c "from mmpose.apis import MMPoseInferencer; print('MMPose OK')"
+python -c "from sam2.build_sam import build_sam2_video_predictor; print('SAM2 OK')"
 ```
 
 ### Step 0.3: Create configuration file
