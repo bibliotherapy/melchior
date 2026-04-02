@@ -1055,47 +1055,44 @@ COCO_EDGES = [
 File: `src/model/classifier.py`
 
 ```python
-class GMFCSClassifier(nn.Module):
+class MultiStreamClassifier(nn.Module):
     """
-    Multi-stream architecture:
+    Multi-stream architecture (implemented in src/model/classifier.py):
     
     Stream A: LiteSTGCN on patient skeleton -> (B, 128) 
     Stream B: Temporal mean+std pooling on skeleton features -> (B, 30)
     Stream C: Temporal mean+std pooling on interaction features -> (B, 20)
     Stream D: Context vector passthrough -> (B, 18)
-    Stream E: Movement quality features -> (B, M)
+    Stream E: Walker-skeleton spatial features -> (B, 5)
     
-    Fusion: concat all -> MLP(196+M -> 64 -> dropout -> num_classes)
+    Fusion: concat all -> MLP(201 -> 64 -> dropout -> num_classes)
+    
+    Supports hierarchical mode with separate heads:
+        Stage 1: Ambulatory vs Non-ambulatory (2 classes)
+        Stage 2-A: L1 vs L2 vs L3 (3 classes)
+        Stage 2-B: L4 vs L5 (2 classes)
     """
     
-    def __init__(self, config, num_classes):
-        self.stgcn = LiteSTGCN(config.model.stgcn)
-        self.classifier = nn.Sequential(
-            nn.Linear(128 + 30 + 20 + 18 + M, 64),
-            nn.ReLU(),
-            nn.Dropout(config.model.fusion.dropout),
-            nn.Linear(64, num_classes)
-        )
+    def __init__(self, stgcn_dim=128, skeleton_feature_dim=15,
+                 interaction_feature_dim=10, context_vector_dim=18,
+                 walker_feature_dim=5, hidden_dim=64, dropout=0.3,
+                 num_classes=5, hierarchical=True):
+        ...
+
+    @staticmethod
+    def temporal_pool(features_seq):
+        """Mean + std temporal pooling. (T, D) -> (2*D,)"""
+        ...
         
-    def temporal_pool(self, features, mask):
-        """Mean + std pooling over non-padded frames."""
-        # features: (B, T, F), mask: (B, T)
-        masked = features * mask.unsqueeze(-1)
-        mean = masked.sum(dim=1) / mask.sum(dim=1, keepdim=True)
-        std = ((masked - mean.unsqueeze(1))**2 * mask.unsqueeze(-1)).sum(1)
-        std = (std / mask.sum(1, keepdim=True)).sqrt()
-        return torch.cat([mean, std], dim=-1)  # (B, 2*F)
-        
-    def forward(self, patient_skeleton, skeleton_feats, interaction_feats,
-                context_vec, movement_quality, mask):
-        a = self.stgcn(patient_skeleton, mask)        # (B, 128)
-        b = self.temporal_pool(skeleton_feats, mask)   # (B, 30)
-        c = self.temporal_pool(interaction_feats, mask) # (B, 20)
-        d = context_vec                                 # (B, 18)
-        e = movement_quality                            # (B, M)
-        fused = torch.cat([a, b, c, d, e], dim=-1)
-        return self.classifier(fused)
+    def forward(self, stgcn_embedding, skeleton_features, interaction_features,
+                context_vector, walker_features, stage=None):
+        # Stream B/C: temporal pool
+        # Fuse A(128) + B(30) + C(20) + D(18) + E(5) = 201D
+        # Route to appropriate stage head
+        ...
 ```
+
+**Key change from original plan:** Stream E is now **walker-skeleton spatial features (5D)** computed from SAM2 walker masks + child keypoints, not movement quality features. Walker features provide direct L3/L4 discrimination via hand-to-walker distance, engagement ratio, and support source ratio. Movement quality descriptors are folded into Layer 1 skeleton features.
 
 ### Step 5.4: Hierarchical 2-stage training
 
