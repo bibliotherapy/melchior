@@ -45,8 +45,6 @@ from src.features.skeleton_features import (
     _head_position,
     _joint_angle,
     _project_onto_axis,
-    _rolling_range,
-    _rolling_std,
     _torso_length,
     _valid_frame_mask,
 )
