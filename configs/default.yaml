@@ -66,6 +66,7 @@ model:
   interaction_feature_dim: 10  # Layer 2
   context_vector_dim: 18  # Layer 3
   walker_feature_dim: 5  # Walker-skeleton spatial features
+  movement_quality_dim: 6  # Per-clip movement quality features (Step 4.2)
 
 # Training
 training:
