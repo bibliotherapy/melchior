@@ -8,8 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 24 patients, ~3,175 clips, 3 camera viewpoints (GoPro front / iPhone left / Galaxy right), 30fps
 - Target: 80%+ classification accuracy
+- To improve the accuracy of distinguishing GMFCS levels 3, 4, and 5, we plan to record and add new patients.
 
 ### Server / GPU Environment
+All code created in the current directory will run on this server, so code (including GPU utilization) should be written to match this server.
 
 | Spec | Value |
 |---|---|
