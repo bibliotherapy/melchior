@@ -54,12 +54,19 @@ def load_2d_keypoints(skeleton_2d_dir, clip_id):
     Walker spatial features require 2D pixel-space keypoints to match
     SAM2 masks, not 3D triangulated coordinates.
 
+    If clip_id is a triplet base (no view suffix), loads the FV (front
+    view) file since walker features are best observed from the front.
+
     Returns:
         Dict with 'child' and 'caregiver' arrays of shape (T, 17, 3).
     """
     path = Path(skeleton_2d_dir) / f"{clip_id}.npz"
     if not path.exists():
-        return None
+        fv_path = Path(skeleton_2d_dir) / f"{clip_id}_FV.npz"
+        if fv_path.exists():
+            path = fv_path
+        else:
+            return None
     data = np.load(str(path))
     return {k: data[k] for k in data.files}
 
