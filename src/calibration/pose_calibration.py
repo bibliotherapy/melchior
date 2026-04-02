@@ -285,6 +285,15 @@ class PoseCalibrator:
                 f"Need >= 2 views, got {len(available_views)}: {available_views}"
             )
 
+        # Select best calibration frames (highest visibility across views)
+        cal_frames = self._select_calibration_frames(pooled)
+        if cal_frames:
+            pooled = {v: kp[cal_frames] for v, kp in pooled.items()}
+            logger.info("  Selected %d calibration frames from %d total",
+                        len(cal_frames), patient_kp_per_view[
+                            next(iter(patient_kp_per_view))
+                        ][next(iter(available_views))].shape[0])
+
         # Build result with FV as reference
         result = {}
         quality = {}
