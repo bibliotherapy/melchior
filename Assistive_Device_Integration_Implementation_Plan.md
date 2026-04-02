@@ -328,7 +328,7 @@ python scripts/00_propagate_masks.py --patient kku
 
 ## Phase 2: Multi-Person 2D Pose Estimation
 
-**Goal:** Replace single-person MediaPipe with multi-person MMPose RTMPose, detecting both patient and caregiver skeletons in every frame of every viewpoint.
+**Goal:** Detect all persons in every frame using MMPose RTMPose, then assign detected skeletons to identity masks from SAM2 (child, caregiver). Falls back to height-ratio heuristic when masks are unavailable.
 
 ### Step 2.1: Set up MMPose with RTMPose
 
