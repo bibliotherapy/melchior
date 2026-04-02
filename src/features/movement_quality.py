@@ -679,9 +679,9 @@ class StandToSitQualityFeatures:
             vel_end = hip_vel[last_20pct]
             acc_end = np.gradient(vel_end) * fps
             # Deceleration = positive acceleration when velocity is negative (slowing down)
+            # hip_height_norm is already torso-length-normalized, so no med_torso needed
             mean_decel = np.mean(np.maximum(acc_end, 0))
-            med_torso = np.median(torso_len[valid]) if valid.any() else 1.0
-            features[1] = np.clip(mean_decel / (med_torso * fps * 0.01 + 1e-8), 0, 1)
+            features[1] = np.clip(mean_decel / (fps ** 2 * 0.01 + 1e-8), 0, 1)
 
         # ── D3: Impact softness (inverse of peak jerk at sitting) ──
         jerk = np.gradient(np.gradient(hip_vel)) * fps * fps
