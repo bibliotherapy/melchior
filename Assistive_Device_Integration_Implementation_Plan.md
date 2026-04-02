@@ -204,9 +204,9 @@ num_gpus: 2
 
 ---
 
-## Phase 1: Manual Annotation (Layer 3 — Context Vector)
+## Phase 1: Manual Annotation (Layer 3 Context Vector + SAM2 First-Frame Points)
 
-**Why first:** Zero code dependency. Can be done immediately. Produces the extended metadata vector.
+**Why first:** Zero code dependency for context vector. SAM2 annotation requires only the annotation tool (already implemented). Both are manual tasks that produce ground truth for all downstream processing.
 
 ### Step 1.1: Review and complete assistive_annotations.json
 
