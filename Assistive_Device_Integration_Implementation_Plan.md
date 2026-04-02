@@ -9,7 +9,9 @@
 - **Layer 2:** Caregiver Interaction Skeleton — dual-skeleton from multi-person pose estimation + interaction features
 - **Layer 3:** Assistive Context Vector — manual annotation of 24 patients extending the 7D metadata to ~18D
 
-**Design Spec:** `docs/superpowers/specs/2026-03-31-assistive-device-integration-design.md`
+**Design Specs:**
+- `docs/superpowers/specs/2026-03-31-assistive-device-integration-design.md` — Three-layer architecture
+- `docs/superpowers/specs/2026-04-02-sam2-guided-tracking-design.md` — SAM2-guided person/walker tracking (supersedes auto height-ratio)
 
 **Hardware:** 2x NVIDIA Tesla V100-DGXS-32GB, CUDA 12.4, 1.5TB disk  
 **Data:** 24 patients, ~3,175 clips, 3 viewpoints (GoPro front / iPhone left / Galaxy right), 30fps
