@@ -88,29 +88,32 @@ def _caregiver_present_mask(caregiver_3d):
     return np.any(np.abs(caregiver_3d) > 1e-6, axis=(1, 2))
 
 
-def _pairwise_joint_distances(skeleton_a, skeleton_b, joints_a, joints_b):
-    """Compute min distance between two sets of joints per frame.
+def _full_distance_matrix(caregiver_3d, child_3d):
+    """Compute per-frame pairwise distance matrix between all joint pairs.
+
+    Vectorized: O(T * 17 * 17) with numpy broadcasting (no Python loops).
 
     Args:
-        skeleton_a: (T, 17, 3).
-        skeleton_b: (T, 17, 3).
-        joints_a: list of joint indices from skeleton_a.
-        joints_b: list of joint indices from skeleton_b.
+        caregiver_3d: (T, 17, 3).
+        child_3d: (T, 17, 3).
 
     Returns:
-        (T,) minimum distance across all joint pairs.
+        (T, 17, 17) float array. dist_matrix[t, cj, pj] = distance between
+        caregiver joint cj and patient joint pj at frame t.
+        Missing joints (zero vectors) get distance set to inf.
     """
-    T = skeleton_a.shape[0]
-    min_dists = np.full(T, np.inf)
+    # (T, 17_cg, 1, 3) - (T, 1, 17_pt, 3) → (T, 17, 17, 3)
+    diff = caregiver_3d[:, :, None, :] - child_3d[:, None, :, :]
+    dist = np.linalg.norm(diff, axis=-1)  # (T, 17, 17)
 
-    for ja in joints_a:
-        for jb in joints_b:
-            dist = np.linalg.norm(skeleton_a[:, ja] - skeleton_b[:, jb], axis=1)
-            min_dists = np.minimum(min_dists, dist)
+    # Mask out missing joints (zero vectors) by setting distance to inf
+    cg_missing = np.linalg.norm(caregiver_3d, axis=2) < 1e-6  # (T, 17)
+    pt_missing = np.linalg.norm(child_3d, axis=2) < 1e-6       # (T, 17)
+    # Expand masks: cg_missing[:, :, None] for caregiver dim, pt_missing[:, None, :] for patient dim
+    dist[cg_missing[:, :, None].repeat(17, axis=2)] = np.inf
+    dist[pt_missing[:, None, :].repeat(17, axis=1)] = np.inf
 
-    # Replace inf with 0 for frames where joints are missing
-    min_dists[np.isinf(min_dists)] = 0.0
-    return min_dists
+    return dist
 
 
 def _rolling_correlation(signal_a, signal_b, window):
