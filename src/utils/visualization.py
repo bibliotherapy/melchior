@@ -204,6 +204,43 @@ def write_verification_video(output_path, frame_generator, fps=30.0,
     return output_path
 
 
+def draw_3d_skeleton(ax, keypoints_3d, identity="child", color=None,
+                     kp_size=30, limb_width=2):
+    """Draw a COCO 17-joint skeleton on a matplotlib 3D axis.
+
+    Args:
+        ax: matplotlib Axes3D instance.
+        keypoints_3d: (17, 3) array with (x, y, z).
+        identity: Name for color lookup.
+        color: Override color (RGB tuple, 0-1 range). If None, converts
+            from IDENTITY_COLORS (BGR 0-255) to RGB 0-1.
+        kp_size: Scatter point size.
+        limb_width: Line width for limb connections.
+    """
+    if keypoints_3d is None:
+        return
+
+    if color is None:
+        bgr = IDENTITY_COLORS.get(identity, (200, 200, 200))
+        color = (bgr[2] / 255, bgr[1] / 255, bgr[0] / 255)
+
+    valid = ~np.isnan(keypoints_3d[:, 0]) & (keypoints_3d[:, 0] != 0)
+
+    # Draw keypoints
+    pts = keypoints_3d[valid]
+    if len(pts) > 0:
+        ax.scatter(pts[:, 0], pts[:, 1], pts[:, 2],
+                   c=[color], s=kp_size, depthshade=True)
+
+    # Draw limbs
+    for i, j in COCO_SKELETON:
+        if valid[i] and valid[j]:
+            xs = [keypoints_3d[i, 0], keypoints_3d[j, 0]]
+            ys = [keypoints_3d[i, 1], keypoints_3d[j, 1]]
+            zs = [keypoints_3d[i, 2], keypoints_3d[j, 2]]
+            ax.plot(xs, ys, zs, c=color, linewidth=limb_width)
+
+
 def create_side_by_side(left, right, labels=("Original", "Overlay")):
     """Create a side-by-side comparison frame.
 
