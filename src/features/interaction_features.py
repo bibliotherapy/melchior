@@ -450,7 +450,7 @@ def get_interaction_feature_names():
     """Return human-readable names for the 10 interaction features."""
     return [
         "caregiver_present",
-        "min_hand_body_distance",
+        "hand_body_proximity",
         "contact_point_count",
         "contact_duration_ratio",
         "velocity_correlation",
