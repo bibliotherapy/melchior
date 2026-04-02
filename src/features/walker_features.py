@@ -130,12 +130,11 @@ def compute_walker_engagement_ratio(distances, threshold_px=30):
     return float(engaged) / float(valid.sum())
 
 
-def compute_walker_velocity(walker_masks, fps=30):
+def compute_walker_velocity(walker_masks):
     """Compute walker centroid velocity across frames.
 
     Args:
         walker_masks: (T, H, W) binary mask array.
-        fps: Video frame rate.
 
     Returns:
         (T-1,) array of centroid velocities in pixels/frame.
