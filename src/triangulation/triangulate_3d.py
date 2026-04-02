@@ -212,9 +212,10 @@ class SkeletonTriangulator:
         """Post-process triangulated skeleton.
 
         Steps:
-            1. Bone length filter (reject > 30% deviation from median)
-            2. Interpolate missing (NaN) joints
-            3. Temporal smoothing (Savitzky-Golay)
+            1. Mark low-confidence joints as NaN
+            2. Bone length filter (reject > 30% deviation from median)
+            3. Interpolate missing (NaN) joints
+            4. Temporal smoothing (Savitzky-Golay)
 
         Args:
             skeleton_3d: (T, 17, 3) with NaN for missing.
@@ -224,6 +225,10 @@ class SkeletonTriangulator:
             Cleaned (T, 17, 3) with NaN replaced.
         """
         cleaned = skeleton_3d.copy()
+
+        # Mark very low-confidence joints as missing
+        low_conf = confidence_3d < CONF_THRESHOLD * 0.5
+        cleaned[low_conf] = np.nan
 
         if self.bone_length_filter:
             valid_mask = self._bone_length_filter(cleaned)
