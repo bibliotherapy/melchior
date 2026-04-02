@@ -36,7 +36,7 @@ ANNOTATION_OUTPUT = "data/metadata/sam2_annotations.json"
 OBJECT_ORDER = ["child", "caregiver", "walker"]
 OBJECT_COLORS = {
     "child": (0, 255, 0),       # green
-    "caregiver": (255, 165, 0),  # orange (BGR)
+    "caregiver": (0, 165, 255),  # orange (BGR)
     "walker": (255, 0, 255),     # magenta
 }
 OBJECT_REQUIRED = {"child": True, "caregiver": False, "walker": False}
