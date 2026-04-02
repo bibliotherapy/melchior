@@ -343,51 +343,43 @@ mim download mmpose --config rtmpose-l_8xb256-420e_coco-256x192 --dest checkpoin
 mim download mmdet --config rtmdet_m_8xb32-300e_coco --dest checkpoints/
 ```
 
-### Step 2.2: Implement multi-person 2D pose extraction
+### Step 2.2: Implement multi-person 2D pose extraction with mask-guided assignment
 
-File: `src/pose/multi_person_pose.py`
+File: `src/pose/multi_person_pose.py` **(implemented)**
 
 **Class: `MultiPersonPoseExtractor`**
 
 ```python
 class MultiPersonPoseExtractor:
-    def __init__(self, config):
+    def __init__(self, det_model, pose_model, device, batch_size, confidence_threshold):
         # Initialize MMPose inferencer with RTMPose-L + RTMDet-m
-        # Set device (cuda:0)
+        # CUDA availability check with CPU fallback
         
-    def extract_from_video(self, video_path):
+    def extract_frame(self, frame):
+        """Extract keypoints for all detected persons in a single frame.
+        Returns: List of (17, 3) arrays."""
+        
+    def extract_video(self, video_path, person_masks=None, sample_rate=1):
+        """Extract identified keypoints for all frames.
+        
+        If person_masks provided (from SAM2): uses mask-guided assignment
+        If person_masks is None: falls back to height-ratio heuristic
+        
+        Returns: Dict mapping identity -> (T, 17, 3) array.
         """
-        Extract 2D poses for ALL persons in each frame.
-        
-        Returns:
-            List[FrameResult] where FrameResult contains:
-                - frame_idx: int
-                - persons: List[PersonPose] where PersonPose contains:
-                    - bbox: (x1, y1, x2, y2, confidence)
-                    - keypoints: (17, 3) — x, y, confidence per joint
-                    - bbox_height: float (for person identification)
-        """
-        
-    def extract_from_video_batch(self, video_paths, output_dir):
-        """Batch process multiple videos, save results as .npz files."""
 ```
 
 **Output format per video:**
 ```
-{video_name}.npz:
-    frame_count: int
-    num_persons_per_frame: (T,) int array
-    person_0_keypoints: (T, 17, 3) — first person (x, y, conf)
-    person_0_bboxes: (T, 5) — (x1, y1, x2, y2, conf)
-    person_1_keypoints: (T, 17, 3) — second person (if present)
-    person_1_bboxes: (T, 5)
-    ...
+{clip_id}.npz:
+    child: (T, 17, 3) — identified child keypoints (x, y, conf)
+    caregiver: (T, 17, 3) — identified caregiver keypoints (if present)
 ```
 
 **Handling edge cases:**
-- Frames with 0 persons detected: mark as missing, interpolate from adjacent frames
-- Frames with 3+ persons: keep only the 2 most consistent with prior frames (by IoU tracking)
-- Person identity tracking across frames: simple IoU-based tracker (not full MOT — overkill for 1-2 people)
+- Frames with 0 persons detected: linearly interpolated from adjacent valid frames
+- Frames with 3+ persons: assigned by mask overlap (SAM2) or kept top-2 by consistency (fallback)
+- Missing frames use `_interpolate_missing()` for smooth temporal sequences
 
 ### Step 2.3: Implement patient vs caregiver identification
 
