@@ -475,7 +475,7 @@ python scripts/verify_2d_pose.py --no-masks                # skip mask overlay
 
 ### Step 3.1: Camera calibration (Human Pose as Calibration Pattern)
 
-File: `src/calibration/pose_calibration.py`
+File: `src/calibration/pose_calibration.py` **(implemented)**
 
 **Method:** Takahashi et al. [5] — uses the child's visible 2D joints across views as correspondence points, then estimates camera parameters.
 
