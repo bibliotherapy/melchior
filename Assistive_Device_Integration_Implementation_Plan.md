@@ -119,13 +119,21 @@ File: `configs/default.yaml`
 
 ```yaml
 # Paths
-data_root: /path/to/CP_dataset
+data_root: ./data
 raw_synced_dir: ${data_root}/raw_synced
 skeleton_2d_dir: ${data_root}/skeleton_2d
 calibration_dir: ${data_root}/calibration
 skeleton_3d_dir: ${data_root}/skeleton_3d
 features_dir: ${data_root}/features
 metadata_dir: ${data_root}/metadata
+
+# SAM2 video object tracking
+tracking:
+  model: sam2_hiera_l
+  checkpoint: checkpoints/sam2_hiera_large.pt
+  device: cuda:0
+  mask_output_dir: data/processed/masks/
+  annotations_path: data/metadata/sam2_annotations.json
 
 # Pose estimation
 pose:
@@ -135,11 +143,11 @@ pose:
   batch_size: 16
   confidence_threshold: 0.3
 
-# Person identification
+# Person identification (mask-guided primary, height-ratio fallback)
 person_id:
-  method: height_ratio  # child vs adult by skeleton height
-  min_height_ratio: 1.3  # adult must be >= 1.3x child height
-  fallback: center_position  # use center-of-frame if ambiguous
+  method: mask_guided  # SAM2 masks primary, height_ratio fallback
+  min_height_ratio: 1.3  # fallback: adult must be >= 1.3x child height
+  fallback: center_position  # use center-of-frame if still ambiguous
 
 # Camera calibration
 calibration:
@@ -159,6 +167,7 @@ triangulation:
 features:
   wfi_window_size: 15  # frames for Wrist Fixation Index sliding window
   contact_threshold_m: 0.15  # meters, caregiver-patient contact threshold
+  walker_proximity_threshold_px: 30  # pixels, hand-to-walker "contact" threshold
   fps: 30
 
 # Model
@@ -175,6 +184,7 @@ model:
   skeleton_feature_dim: 15  # Layer 1
   interaction_feature_dim: 10  # Layer 2
   context_vector_dim: 18  # Layer 3
+  walker_feature_dim: 5  # Walker-skeleton spatial features
 
 # Training
 training:
@@ -186,6 +196,10 @@ training:
   patience: 20  # early stopping
   cv_folds: 6  # patient-level cross-validation (leave-4-out)
   class_weight: balanced
+
+# GPU
+device: cuda
+num_gpus: 2
 ```
 
 ---
