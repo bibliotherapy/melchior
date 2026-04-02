@@ -120,12 +120,12 @@ File: `configs/default.yaml`
 ```yaml
 # Paths
 data_root: ./data
-raw_synced_dir: ${data_root}/raw_synced
-skeleton_2d_dir: ${data_root}/skeleton_2d
-calibration_dir: ${data_root}/calibration
-skeleton_3d_dir: ${data_root}/skeleton_3d
-features_dir: ${data_root}/features
-metadata_dir: ${data_root}/metadata
+raw_synced_dir: ./data/raw_synced
+skeleton_2d_dir: ./data/skeleton_2d
+calibration_dir: ./data/calibration
+skeleton_3d_dir: ./data/skeleton_3d
+features_dir: ./data/features
+metadata_dir: ./data/metadata
 
 # SAM2 video object tracking
 tracking:
