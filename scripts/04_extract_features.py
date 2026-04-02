@@ -92,6 +92,7 @@ def main():
     config = load_config(args.config)
 
     skeleton_3d_dir = config.get("skeleton_3d_dir", "data/skeleton_3d")
+    skeleton_2d_dir = config.get("skeleton_2d_dir", "data/skeleton_2d")
     features_dir = config.get("features_dir", "data/features")
     mask_dir = config.get("tracking", {}).get("mask_output_dir", "data/processed/masks")
     metadata_dir = config.get("metadata_dir", "data/metadata")
