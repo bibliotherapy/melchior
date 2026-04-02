@@ -58,9 +58,9 @@ SAM2 manual first-frame annotation → Mask propagation (child, caregiver, walke
 → Camera calibration (Human Pose as Calibration Pattern)
 → 3D triangulation (OpenCV, dual skeleton) → Feature extraction (Layers 1-3 + walker-spatial)
 → Hierarchical 2-stage classification:
-    Stage 1: Ambulatory vs Non-ambulatory (binary)
-    Stage 2-A: L1 vs L2 vs L3 (walk quality, walker usage)
-    Stage 2-B: L4 vs L5 (caregiver assistance, side rolling independence)
+    Stage 1: Ambulatory vs Non-ambulatory (routed by w_status, not GMFCS level)
+    Stage 2-A: L1 vs L2 vs L3-L4 (walk quality, walker engagement)
+    Stage 2-B: L3-L4 vs L5 (caregiver assistance, side rolling independence)
 ```
 
 ### Model: Lite ST-GCN + Multi-Stream Fusion
