@@ -165,7 +165,25 @@ class SkeletonTriangulator:
             T = max(kp.shape[0] for kp in kp_per_view.values()) if kp_per_view else 1
             return np.full((T, 17, 3), np.nan), np.zeros((T, 17))
 
-        T = kp_per_view[views[0]].shape[0]
+        # Undistort keypoints per view (critical for GoPro barrel distortion).
+        # Convert from distorted pixels to undistorted pixels using K and dist.
+        kp_undistorted = {}
+        for v in views:
+            kp_orig = kp_per_view[v]
+            T_v, n_joints = kp_orig.shape[0], kp_orig.shape[1]
+            K = calibration[v]["K"]
+            dist = calibration[v]["dist"]
+            kp_ud = kp_orig.copy()
+            if np.any(dist != 0):
+                for t in range(T_v):
+                    pts = kp_orig[t, :, :2].reshape(-1, 1, 2).astype(np.float64)
+                    # Undistort to normalized, then reproject to undistorted pixels
+                    pts_norm = cv2.undistortPoints(pts, K, dist)
+                    pts_ud = cv2.undistortPoints(pts, K, dist, P=K)
+                    kp_ud[t, :, :2] = pts_ud.reshape(-1, 2)
+            kp_undistorted[v] = kp_ud
+
+        T = kp_undistorted[views[0]].shape[0]
         skeleton_3d = np.full((T, 17, 3), np.nan)
         confidence_3d = np.zeros((T, 17))
 
@@ -175,9 +193,9 @@ class SkeletonTriangulator:
                 pts = {}
                 confs = []
                 for v in views:
-                    conf = kp_per_view[v][t, j, 2]
+                    conf = kp_undistorted[v][t, j, 2]
                     if conf > CONF_THRESHOLD:
-                        pts[v] = kp_per_view[v][t, j, :2]
+                        pts[v] = kp_undistorted[v][t, j, :2]
                         confs.append(conf)
 
                 if len(pts) >= 2:
