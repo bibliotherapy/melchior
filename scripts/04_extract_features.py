@@ -157,10 +157,8 @@ def main():
 
         patient_id = clip_id_to_patient(clip_id)
 
-        # Layer 1: Skeleton features from 3D keypoints (placeholder)
-        # TODO: implement skeleton_features.extract_skeleton_features(child_kp_3d)
-        T = child_kp_3d.shape[0]
-        layer1_features = np.zeros((T, 15), dtype=np.float32)
+        # Layer 1: Skeleton features from 3D keypoints
+        layer1_features = extract_skeleton_features(child_kp_3d, features_cfg)
 
         # Layer 2: Interaction features from 3D keypoints (placeholder)
         # TODO: implement interaction_features.extract_interaction_features(child_kp_3d, caregiver_kp_3d)
