@@ -546,9 +546,8 @@ class SideRollingQualityFeatures:
         if len(s_onsets) > 0 and len(h_onsets) > 0:
             lags = []
             for s_t in s_onsets:
-                if len(h_onsets) > 0:
-                    nearest_h = h_onsets[np.argmin(np.abs(h_onsets - s_t))]
-                    lags.append(abs(s_t - nearest_h) / fps)
+                nearest_h = h_onsets[np.argmin(np.abs(h_onsets - s_t))]
+                lags.append(abs(s_t - nearest_h) / fps)
             if lags:
                 mean_lag = np.mean(lags)
                 features[0] = np.clip(mean_lag / 0.5, 0, 1)
