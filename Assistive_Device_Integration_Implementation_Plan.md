@@ -1068,9 +1068,9 @@ class MultiStreamClassifier(nn.Module):
     Fusion: concat all -> MLP(201 -> 64 -> dropout -> num_classes)
     
     Supports hierarchical mode with separate heads:
-        Stage 1: Ambulatory vs Non-ambulatory (2 classes)
-        Stage 2-A: L1 vs L2 vs L3 (3 classes)
-        Stage 2-B: L4 vs L5 (2 classes)
+        Stage 1: Ambulatory vs Non-ambulatory (2 classes, routed by w_status)
+        Stage 2-A: L1 vs L2 vs L3-L4 (3 classes, ambulatory branch)
+        Stage 2-B: L3-L4 vs L5 (2 classes, non-ambulatory branch)
     """
     
     def __init__(self, stgcn_dim=128, skeleton_feature_dim=15,
