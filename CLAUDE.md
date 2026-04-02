@@ -97,10 +97,13 @@ configs/default.yaml   # All hyperparameters and paths
 
 ## GMFCS Level Discrimination Keys
 
-- **L1 vs L2:** Gait speed, symmetry, balance (subtle, same movement pattern)
-- **L2 vs L3:** Walker usage — detected via walker-skeleton spatial features (hand-to-walker distance, engagement ratio) + wrist fixation index + arm swing amplitude
-- **L3 vs L4:** Device-assisted vs human-assisted mobility — walker engagement ratio + support source ratio (hand-to-walker vs hand-to-caregiver distance) + caregiver assistance level
-- **L4 vs L5:** Movement independence score during side rolling (self-initiated vs caregiver-driven)
+- **Stage 1 (ambulatory vs non-ambulatory):** Routed by actual walking ability (w_status), not GMFCS level. L3/L4 patients can appear in either branch.
+- **Stage 2-A (ambulatory branch):**
+  - **L1 vs L2:** Gait speed, symmetry, balance (subtle, same movement pattern)
+  - **L2 vs L3-L4:** Walker usage — walker-skeleton spatial features (hand-to-walker distance, engagement ratio) + wrist fixation index + arm swing amplitude
+- **Stage 2-B (non-ambulatory branch):**
+  - **L3-L4 vs L5:** Movement independence score during side rolling (self-initiated vs caregiver-driven)
+- **L3 vs L4 (within merged class):** Device-assisted (walker engagement → L3) vs human-assisted (caregiver support_source_ratio → L4) mobility
 
 ## Auto-Backup
 
