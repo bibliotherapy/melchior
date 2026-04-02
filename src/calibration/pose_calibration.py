@@ -154,10 +154,9 @@ class PoseCalibrator:
 
         Steps:
             1. Collect correspondences (joints visible in both views)
-            2. Undistort points
-            3. Fundamental matrix via RANSAC
-            4. Essential matrix: E = K2.T @ F @ K1
-            5. Recover R, t from E
+            2. Undistort to normalized coordinates (corrects GoPro distortion)
+            3. Essential matrix via findEssentialMat (RANSAC) on undistorted points
+            4. Recover R, t from E
 
         Args:
             kp_view1: (T, 17, 3) keypoints from view 1.
@@ -180,20 +179,22 @@ class PoseCalibrator:
         K1, _ = self.get_intrinsics(view1)
         K2, _ = self.get_intrinsics(view2)
 
-        # Undistort to normalized coordinates
+        # Undistort to normalized coordinates (critical for GoPro barrel distortion)
         pts1_norm = self.undistort_keypoints(pts1, view1)
         pts2_norm = self.undistort_keypoints(pts2, view2)
 
-        # Convert back to pixel coordinates for findFundamentalMat
-        pts1_px = pts1.astype(np.float64)
-        pts2_px = pts2.astype(np.float64)
+        # Essential matrix directly on undistorted normalized points.
+        # Scale RANSAC threshold from pixels to normalized coordinates.
+        focal_avg = (K1[0, 0] + K2[0, 0]) / 2
+        norm_threshold = self.ransac_threshold / focal_avg
 
-        # Fundamental matrix
-        F, mask = cv2.findFundamentalMat(
-            pts1_px, pts2_px, cv2.FM_RANSAC, self.ransac_threshold,
+        K_eye = np.eye(3, dtype=np.float64)
+        E, mask = cv2.findEssentialMat(
+            pts1_norm, pts2_norm, K_eye,
+            method=cv2.RANSAC, threshold=norm_threshold,
         )
-        if F is None or F.shape != (3, 3):
-            logger.warning("Fundamental matrix estimation failed for %s-%s", view1, view2)
+        if E is None or E.shape != (3, 3):
+            logger.warning("Essential matrix estimation failed for %s-%s", view1, view2)
             return None
 
         inlier_mask = mask.ravel().astype(bool)
@@ -202,20 +203,14 @@ class PoseCalibrator:
             logger.warning("Only %d inliers for %s-%s", inlier_count, view1, view2)
             return None
 
-        # Essential matrix
-        E = K2.T @ F @ K1
+        # Recover R, t from E using inlier normalized points
+        _, R, t, pose_mask = cv2.recoverPose(
+            E, pts1_norm[inlier_mask], pts2_norm[inlier_mask], K_eye,
+        )
 
-        # Recover R, t using inlier points (normalized coordinates)
-        pts1_inlier = pts1_norm[inlier_mask]
-        pts2_inlier = pts2_norm[inlier_mask]
-
-        # recoverPose expects points in normalized coordinates when K=I
-        K_eye = np.eye(3, dtype=np.float64)
-        _, R, t, pose_mask = cv2.recoverPose(E, pts1_inlier, pts2_inlier, K_eye)
-
-        # Compute reprojection error (approximate)
-        reproj_error = self._compute_reproj_error(
-            pts1_px[inlier_mask], pts2_px[inlier_mask], F,
+        # Compute reprojection error in normalized coordinates
+        reproj_error = self._compute_reproj_error_normalized(
+            pts1_norm[inlier_mask], pts2_norm[inlier_mask], E, focal_avg,
         )
 
         logger.info(
