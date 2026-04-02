@@ -25,6 +25,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.features.context_vector import ContextVectorEncoder
+from src.features.interaction_features import extract_interaction_features
 from src.features.movement_quality import extract_movement_quality_features
 from src.features.skeleton_features import extract_skeleton_features
 from src.features.walker_features import extract_walker_features
