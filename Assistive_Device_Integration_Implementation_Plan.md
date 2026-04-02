@@ -541,7 +541,7 @@ NOTE: These are initial approximations. The actual intrinsics should be refined 
 
 ### Step 3.2: 3D triangulation
 
-File: `src/triangulation/triangulate_3d.py`
+File: `src/triangulation/triangulate_3d.py` **(implemented)**
 
 **Class: `SkeletonTriangulator`**
 
