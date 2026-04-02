@@ -25,10 +25,13 @@
 CP/
 ├── src/
 │   ├── __init__.py
+│   ├── tracking/
+│   │   ├── __init__.py
+│   │   └── sam2_tracker.py            # SAM2 video object tracking (child/caregiver/walker)
 │   ├── pose/
 │   │   ├── __init__.py
-│   │   ├── multi_person_pose.py      # Multi-person 2D pose estimation
-│   │   └── person_identifier.py       # Patient vs caregiver identification
+│   │   ├── multi_person_pose.py      # Multi-person 2D pose estimation + mask-guided assignment
+│   │   └── person_identifier.py       # Mask-guided person ID (SAM2 primary, height-ratio fallback)
 │   ├── calibration/
 │   │   ├── __init__.py
 │   │   └── pose_calibration.py        # Human Pose as Calibration Pattern
@@ -39,22 +42,26 @@ CP/
 │   │   ├── __init__.py
 │   │   ├── skeleton_features.py       # Layer 1: device-proxy skeletal features
 │   │   ├── interaction_features.py    # Layer 2: caregiver interaction features
+│   │   ├── walker_features.py         # Walker-skeleton spatial features (L3/L4 discrimination)
 │   │   ├── movement_quality.py        # GMFCS-E&R movement quality descriptors
 │   │   └── context_vector.py          # Layer 3: extended metadata encoder
 │   ├── model/
 │   │   ├── __init__.py
 │   │   ├── dataset.py                 # Data loading and batching
 │   │   ├── lite_stgcn.py             # Lightweight ST-GCN encoder
-│   │   ├── classifier.py             # Multi-stream fusion + classification head
+│   │   ├── classifier.py             # Multi-stream fusion (5 streams) + classification head
 │   │   └── train.py                   # Hierarchical 2-stage training loop
 │   └── utils/
 │       ├── __init__.py
+│       ├── naming.py                  # Clip ID parsing utilities (patient, view, movement)
 │       ├── visualization.py           # Skeleton overlay, feature distribution plots
 │       └── evaluation.py              # Cross-validation, ablation, SHAP analysis
 ├── data/
 │   ├── raw/                           # Existing raw video files
 │   ├── raw_synced/                    # Time-synchronized, clipped triplets (to be created)
-│   ├── skeleton_2d/                   # 2D pose estimation output
+│   ├── processed/
+│   │   └── masks/                     # SAM2 propagated masks per clip
+│   ├── skeleton_2d/                   # 2D pose estimation output (identified: child/caregiver)
 │   ├── calibration/                   # Per-patient camera parameters
 │   ├── skeleton_3d/
 │   │   ├── patient/                   # Patient 3D skeletons (.npy)
@@ -64,14 +71,17 @@ CP/
 │       ├── labels.json                # GMFCS labels (existing)
 │       ├── triplets.json              # Triplet mapping (existing)
 │       ├── annotation_schema.json     # Annotation schema (created)
-│       └── assistive_annotations.json # Device/assistance annotations (created, needs filling)
+│       ├── assistive_annotations.json # Device/assistance annotations (created, needs filling)
+│       └── sam2_annotations.json      # Per-clip first-frame point annotations for SAM2
 ├── configs/
 │   └── default.yaml                   # All hyperparameters and paths
 ├── scripts/
-│   ├── 01_extract_2d_pose.py          # Batch 2D pose extraction
+│   ├── annotate_first_frame.py        # Manual first-frame annotation tool for SAM2
+│   ├── 00_propagate_masks.py          # Batch SAM2 mask propagation
+│   ├── 01_extract_2d_pose.py          # Batch 2D pose extraction (mask-guided)
 │   ├── 02_calibrate_cameras.py        # Batch camera calibration
 │   ├── 03_triangulate_3d.py           # Batch 3D triangulation
-│   ├── 04_extract_features.py         # Batch feature extraction
+│   ├── 04_extract_features.py         # Batch feature extraction (incl. walker spatial)
 │   ├── 05_train.py                    # Training entry point
 │   └── 06_evaluate.py                 # Evaluation entry point
 └── docs/
