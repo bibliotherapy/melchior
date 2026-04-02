@@ -187,7 +187,6 @@ class SAM2VideoTracker:
             self._predictor.reset_state(state)
 
         # Clean up temp frames
-        import shutil
         if tmp_frame_dir.exists():
             shutil.rmtree(tmp_frame_dir)
 
