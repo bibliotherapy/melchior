@@ -221,7 +221,6 @@ class PoseCalibrator:
         return {
             "R": R,
             "t": t,
-            "F": F,
             "E": E,
             "inlier_count": inlier_count,
             "total_correspondences": len(pts1),
