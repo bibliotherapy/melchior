@@ -25,6 +25,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.features.context_vector import ContextVectorEncoder
+from src.features.skeleton_features import extract_skeleton_features
 from src.features.walker_features import extract_walker_features
 from src.tracking.sam2_tracker import SAM2VideoTracker
 from src.utils.naming import clip_id_to_patient
