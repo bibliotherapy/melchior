@@ -268,6 +268,62 @@ File: `src/features/context_vector.py`
 - L3: walker_used = 1, walk assistance = 1.0 (independent with device), overall_assistance ≈ 0.83
 - L5: all assistance low (0.0-0.2), no devices, overall_assistance ≈ 0.17
 
+### Step 1.3: SAM2 first-frame annotation (child, caregiver, walker)
+
+**Tool:** `scripts/annotate_first_frame.py` (already implemented)
+
+**Why SAM2 instead of automatic detection:** Analysis showed that automatic height-ratio person identification fails during physical assistance (L4/L5), produces identical wrist fixation signatures for "gripping walker" vs "held by caregiver" (L3/L4 confound), and was confirmed unreliable in prior project experience. Manual first-frame annotation with SAM2 tracking provides 100% correct person identification initialization. See `docs/superpowers/specs/2026-04-02-sam2-guided-tracking-design.md` for full rationale.
+
+**Action required (manual, by you):** For each video clip, open the annotation tool and click on:
+1. **Child** (required, every clip) — click anywhere on the child's body in the first frame
+2. **Caregiver** (optional, when present) — click on the caregiver. Press S to skip if no caregiver visible.
+3. **Walker** (optional, when visible) — click on the walker. Press S to skip if no walker.
+
+**Usage:**
+```bash
+python scripts/annotate_first_frame.py --data-root ./data/raw_synced --resume
+```
+
+**Estimated effort:**
+| Target | Clips | Est. Time |
+|--------|-------|-----------|
+| Child | ~3,175 | ~8.8 hours |
+| Caregiver | ~1,300 (L3-L5 clips) | ~2.9 hours |
+| Walker | ~200 (L3 walking clips) | ~0.3 hours |
+| **Total** | | **~12 hours (one-time)** |
+
+**Tips:**
+- The tool supports `--resume` to skip already-annotated clips (auto-saves after each clip)
+- Use `--re-annotate kku_w_01_FV` to fix a specific clip
+- This annotation also serves as a data quality review — flag any problematic clips
+
+**Output:** `data/metadata/sam2_annotations.json`
+
+### Step 1.4: Batch SAM2 mask propagation
+
+**Script:** `scripts/00_propagate_masks.py` (already implemented)
+
+After first-frame annotations are complete, propagate masks through all frames:
+
+```bash
+python scripts/00_propagate_masks.py --config configs/default.yaml
+# Or per-patient:
+python scripts/00_propagate_masks.py --patient kku
+```
+
+**Output:** `data/processed/masks/{clip_id}/` containing:
+- `child.npz` — (T, H, W) boolean mask array
+- `caregiver.npz` — (T, H, W) if caregiver was annotated
+- `walker.npz` — (T, H, W) if walker was annotated
+- `tracking_meta.json` — annotation coordinates and video metadata
+
+**Estimated runtime:** ~3,175 clips at ~2-5 seconds per clip on V100 = ~2-4 hours.
+
+**Verification:**
+- Visualize propagated masks on 2-3 sample clips per GMFCS level
+- Check for mask drift, identity swaps, or loss of tracking
+- Specifically verify L4/L5 clips where caregiver physically contacts child
+
 ---
 
 ## Phase 2: Multi-Person 2D Pose Estimation
