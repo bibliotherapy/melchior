@@ -27,7 +27,7 @@ COCO_SKELETON = [
 # BGR colors matching annotate_first_frame.py
 IDENTITY_COLORS = {
     "child": (0, 255, 0),       # green
-    "caregiver": (255, 165, 0), # orange BGR
+    "caregiver": (0, 165, 255), # orange (BGR)
     "walker": (255, 0, 255),    # magenta
 }
 
