@@ -169,7 +169,7 @@ def main():
 
         # Layer 2: Interaction features from 3D keypoints (placeholder)
         # TODO: implement interaction_features.extract_interaction_features(child_kp_3d, caregiver_kp_3d)
-        layer2_features = np.zeros((T, 10), dtype=np.float32)
+        layer2_features = np.zeros((child_kp_3d.shape[0], 10), dtype=np.float32)
 
         # Layer 3: Context vector
         try:
