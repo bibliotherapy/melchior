@@ -414,30 +414,39 @@ def identify_persons(detected_skeletons, person_masks=None, min_height_ratio=1.3
 
 ### Step 2.4: Batch processing script
 
-File: `scripts/01_extract_2d_pose.py`
+File: `scripts/01_extract_2d_pose.py` **(implemented)**
 
 ```python
 """
 Process all video clips:
-1. For each triplet (FV, LV, RV):
-   a. Run multi-person pose extraction on each viewpoint
-   b. Identify patient vs caregiver in each viewpoint
-   c. Save labeled 2D keypoints
+1. For each clip:
+   a. Load SAM2 person masks (child, caregiver) if available
+   b. Run multi-person RTMPose pose extraction
+   c. Assign skeletons to identity masks (or height-ratio fallback)
+   d. Save identified 2D keypoints as .npz
    
-Output: data/skeleton_2d/{patient_id}/{clip_id}_{viewpoint}_patient.npy
-        data/skeleton_2d/{patient_id}/{clip_id}_{viewpoint}_caregiver.npy (if present)
+Output: data/skeleton_2d/{clip_id}.npz (contains 'child' and 'caregiver' arrays)
 """
 ```
 
-**Estimated runtime:** ~9,525 videos (3,175 clips x 3 views) at ~10 fps inference = ~3-4 hours on 1x V100.
+**Usage:**
+```bash
+python scripts/01_extract_2d_pose.py --config configs/default.yaml
+python scripts/01_extract_2d_pose.py --patient kku
+```
+
+**Estimated runtime:** ~3,175 clips at ~10 fps inference = ~3-4 hours on 1x V100.
+
+Logs report how many clips used mask-guided vs height-ratio fallback.
 
 ### Step 2.5: Visual verification
 
 - Overlay detected skeletons on 2-3 sample clips per GMFCS level
 - Specifically verify:
-  - L3 patient + walker: Is patient correctly identified (not the walker)?
-  - L4/L5 patient + caregiver: Are both skeletons detected? Is patient/caregiver correctly labeled?
-  - Clips with only the patient: No false caregiver detection?
+  - **Mask-guided clips:** Child skeleton correctly follows child mask throughout entire clip
+  - **L3 patient + walker:** Child skeleton is on the child, not confused with walker
+  - **L4/L5 patient + caregiver:** Both skeletons maintain correct identity during physical contact
+  - **Height-fallback clips:** Check if any clips without masks have incorrect assignment
 
 ---
 
