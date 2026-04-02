@@ -72,14 +72,14 @@ class MultiStreamClassifier(nn.Module):
                 nn.Dropout(dropout),
                 nn.Linear(hidden_dim, 2),
             )
-            # Stage 2-A: L1 vs L2 vs L3
+            # Stage 2-A: L1 vs L2 vs L3-L4 (ambulatory branch)
             self.stage2a_head = nn.Sequential(
                 nn.Linear(fusion_input_dim, hidden_dim),
                 nn.ReLU(),
                 nn.Dropout(dropout),
                 nn.Linear(hidden_dim, 3),
             )
-            # Stage 2-B: L4 vs L5
+            # Stage 2-B: L3-L4 vs L5 (non-ambulatory branch)
             self.stage2b_head = nn.Sequential(
                 nn.Linear(fusion_input_dim, hidden_dim),
                 nn.ReLU(),
