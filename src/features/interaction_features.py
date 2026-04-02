@@ -420,14 +420,17 @@ def extract_interaction_features(child_3d, caregiver_3d, config=None):
             Zeros for absent caregiver.
         config: dict with optional keys:
             - 'fps': int (default 30)
-            - 'contact_threshold_m': float (default 0.4, in torso-length units)
+            - 'contact_threshold_m': float (default 0.15, meters).
+              Converted to torso-length-relative units internally.
 
     Returns:
         np.ndarray of shape (T, 10), dtype float32.
     """
     config = config or {}
     fps = config.get("fps", DEFAULT_FPS)
-    contact_thresh = config.get("contact_threshold_rel", DEFAULT_CONTACT_THRESHOLD)
+    # Read meters from config, convert to torso-length-relative units
+    threshold_m = config.get("contact_threshold_m", 0.15)
+    contact_thresh = threshold_m / _ASSUMED_TORSO_M
 
     T = child_3d.shape[0]
     zero_features = np.zeros((T, NUM_INTERACTION_FEATURES), dtype=np.float32)
