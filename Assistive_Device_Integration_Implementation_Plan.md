@@ -653,7 +653,7 @@ python scripts/verify_3d_triangulation.py --all
 
 ### Step 4.1: Layer 1 — Skeleton-derived features for device usage detection
 
-File: `src/features/skeleton_features.py`
+File: `src/features/skeleton_features.py` **(implemented)**
 
 **Class: `SkeletonFeatureExtractor`**
 
