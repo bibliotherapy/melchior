@@ -99,11 +99,10 @@ def draw_mask_overlay(frame, mask, identity="child", color=None,
         color = IDENTITY_COLORS.get(identity, (200, 200, 200))
 
     mask_bool = mask.astype(bool)
-    overlay = frame.copy()
-    overlay[mask_bool] = color
-    frame[mask_bool] = cv2.addWeighted(
-        overlay, alpha, frame, 1 - alpha, 0
-    )[mask_bool]
+    frame[mask_bool] = (
+        np.array(color, dtype=np.float32) * alpha
+        + frame[mask_bool].astype(np.float32) * (1 - alpha)
+    ).astype(np.uint8)
 
     return frame
 
