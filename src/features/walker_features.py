@@ -320,7 +320,7 @@ def extract_walker_features(child_keypoints, walker_masks, caregiver_keypoints=N
     engagement = compute_walker_engagement_ratio(distances, threshold_px=proximity_threshold_px)
 
     # [2] Walker velocity (mean, normalized)
-    walker_vel = compute_walker_velocity(walker_masks[:T], fps=fps)
+    walker_vel = compute_walker_velocity(walker_masks[:T])
     vel_mean = float(np.mean(walker_vel)) / diag if len(walker_vel) > 0 else 0.0
     vel_mean = min(vel_mean, 1.0)
 
