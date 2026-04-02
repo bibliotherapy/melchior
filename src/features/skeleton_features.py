@@ -283,19 +283,22 @@ def _head_position(skeleton_3d):
 def _compute_wfi(skeleton_3d, torso_len, valid, window, max_std):
     """F1-F2: Wrist Fixation Index, left and right.
 
-    High WFI (~1) = wrist is fixed (gripping walker/stand).
-    Low WFI (~0) = wrist moves freely.
+    Measures wrist stability relative to the body frame (hip center).
+    High WFI (~1) = wrist is fixed relative to body (gripping walker/stand).
+    Low WFI (~0) = wrist moves freely relative to body.
     """
     T = skeleton_3d.shape[0]
+    hip_c = (skeleton_3d[:, LEFT_HIP] + skeleton_3d[:, RIGHT_HIP]) / 2
     result = np.zeros((T, 2), dtype=np.float64)
 
     for i, joint in enumerate([LEFT_WRIST, RIGHT_WRIST]):
-        wrist = skeleton_3d[:, joint].copy()
-        # Scale-normalize position by torso length
-        wrist_norm = wrist / torso_len[:, None]
-        # Rolling std of normalized 3D position
-        rstd = _rolling_std(wrist_norm, window)  # (T, 3)
-        std_mag = np.linalg.norm(rstd, axis=1)   # (T,)
+        # Wrist position relative to hip center (body-relative)
+        wrist_rel = skeleton_3d[:, joint] - hip_c
+        # Scale-normalize by torso length
+        wrist_rel_norm = wrist_rel / torso_len[:, None]
+        # Rolling std of body-relative normalized position
+        rstd = _rolling_std(wrist_rel_norm, window)  # (T, 3)
+        std_mag = np.linalg.norm(rstd, axis=1)       # (T,)
         wfi = 1.0 - np.clip(std_mag / max_std, 0, 1)
         result[:, i] = wfi
 
