@@ -168,9 +168,10 @@ def main():
             child_kp_3d, movement_type, features_cfg
         )
 
-        # Layer 2: Interaction features from 3D keypoints (placeholder)
-        # TODO: implement interaction_features.extract_interaction_features(child_kp_3d, caregiver_kp_3d)
-        layer2_features = np.zeros((child_kp_3d.shape[0], 10), dtype=np.float32)
+        # Layer 2: Interaction features from paired patient + caregiver skeletons
+        layer2_features = extract_interaction_features(
+            child_kp_3d, caregiver_kp_3d, features_cfg
+        )
 
         # Layer 3: Context vector
         try:
