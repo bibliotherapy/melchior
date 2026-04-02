@@ -633,8 +633,7 @@ class StandToSitQualityFeatures:
         # Pelvis height signal
         hip_c = _hip_center(skeleton_3d)
         up_dir = _body_vertical(skeleton_3d, valid)
-        hip_height = _project_onto_axis(hip_c, up_dir)
-        hip_height_norm = hip_height / torso_len
+        hip_height_norm = _pelvis_height_signal(skeleton_3d, valid, torso_len)
 
         # Detect descent phase
         n_start = max(1, int(T * 0.1))
