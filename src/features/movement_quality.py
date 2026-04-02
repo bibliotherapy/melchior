@@ -690,8 +690,8 @@ class StandToSitQualityFeatures:
         jerk_window = max(0, sitting_frame - 5), min(T, sitting_frame + 6)
         if jerk_window[1] > jerk_window[0]:
             peak_jerk = np.max(np.abs(jerk[jerk_window[0]:jerk_window[1]]))
-            med_torso = np.median(torso_len[valid]) if valid.any() else 1.0
-            norm_jerk = peak_jerk / (med_torso * fps ** 3 + 1e-8)
+            # Signal is already torso-length-normalized
+            norm_jerk = peak_jerk / (fps ** 3 + 1e-8)
             features[2] = 1.0 / (1.0 + norm_jerk * 100)
 
         # ── D4: Hand support frequency ──
