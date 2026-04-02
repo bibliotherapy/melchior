@@ -381,46 +381,35 @@ class MultiPersonPoseExtractor:
 - Frames with 3+ persons: assigned by mask overlap (SAM2) or kept top-2 by consistency (fallback)
 - Missing frames use `_interpolate_missing()` for smooth temporal sequences
 
-### Step 2.3: Implement patient vs caregiver identification
+### Step 2.3: Implement mask-guided person identification
 
-File: `src/pose/person_identifier.py`
+File: `src/pose/person_identifier.py` **(implemented)**
 
-**Class: `PersonIdentifier`**
+**Primary method: SAM2 mask-guided assignment**
 
 ```python
-class PersonIdentifier:
-    def __init__(self, min_height_ratio=1.3):
-        # Config for child vs adult height threshold
-        
-    def identify(self, all_persons_per_frame):
-        """
-        Classify each detected person as 'patient' or 'caregiver'.
-        
-        Method:
-        1. Compute median skeleton height per tracked person across all frames
-        2. Smallest consistent person = patient (child aged 2-6)
-        3. Any person >= 1.3x patient height = caregiver (adult)
-        
-        Fallback (ambiguous heights):
-        - Patient is typically centered in the camera frame
-        - Patient is the one performing the movement (higher motion energy)
-        
-        Returns:
-            patient_keypoints: (T, 17, 3)
-            caregiver_keypoints: (T, 17, 3) or None
-            caregiver_present: (T,) boolean
-        """
+def assign_skeletons_mask_guided(detected_skeletons, person_masks, conf_threshold=0.3):
+    """Assign detected skeletons to SAM2 identity masks.
+    
+    Scoring: 0.7 * keypoint_overlap + 0.3 * bbox_IoU
+    Assignment: greedy best-match (sufficient for 2 persons)
+    
+    Returns: Dict mapping identity name -> (17, 3) skeleton or None.
+    """
 ```
 
-**Skeleton height computation:**
+**Fallback: height-ratio heuristic** (when SAM2 masks unavailable)
+
 ```python
-def skeleton_height(keypoints):
-    """Head-to-ankle Euclidean distance as proxy for person height."""
-    head = keypoints[0]  # nose or top_head
-    left_ankle = keypoints[15]
-    right_ankle = keypoints[16]
-    ankle_mid = (left_ankle + right_ankle) / 2
-    return np.linalg.norm(head[:2] - ankle_mid[:2])
+def assign_skeletons_height_ratio(detected_skeletons, min_height_ratio=1.3):
+    """Child = shortest skeleton. Caregiver = tallest if >= 1.3x child height."""
+```
+
+**Top-level function:**
+
+```python
+def identify_persons(detected_skeletons, person_masks=None, min_height_ratio=1.3):
+    """Mask-guided if masks available, else height-ratio fallback."""
 ```
 
 ### Step 2.4: Batch processing script
