@@ -619,19 +619,33 @@ For each triplet:
 
 **Output format:**
 ```
-data/skeleton_3d/patient/{patient_id}_{movement}_{number}.npy
-    Shape: (T, 17, 3) — float32, xyz in meters
-
-data/skeleton_3d/caregiver/{patient_id}_{movement}_{number}.npy
-    Shape: (T, 17, 3) — float32, xyz in meters (zeros if no caregiver)
+data/skeleton_3d/{triplet_base}.npz
+    Keys: 'child' (T, 17, 3) float32, 'caregiver' (T, 17, 3) float32
+    Triplet base = clip ID without view suffix (e.g., 'kku_w_01')
+    Consumed by scripts/04_extract_features.py as-is
 ```
 
 ### Step 3.4: Verification
 
-- Visualize 3D skeletons (matplotlib 3D scatter) for 2-3 clips per GMFCS level
-- Check bone length consistency across frames (should be near-constant for rigid skeleton)
-- Check that caregiver skeleton is anatomically plausible when present
-- Compute reprojection error: project 3D joints back to 2D, measure pixel distance from original 2D detections. Target: < 10 pixels mean error.
+File: `scripts/verify_3d_triangulation.py` **(implemented)**
+
+**Usage:**
+```bash
+python scripts/verify_3d_triangulation.py
+python scripts/verify_3d_triangulation.py --patient kku
+python scripts/verify_3d_triangulation.py --clip kku_w_01
+python scripts/verify_3d_triangulation.py --all
+```
+
+**Output:** `outputs/verification_3d/L{1-5}/` with:
+- `{triplet_base}_3d.png` — 3D skeleton matplotlib scatter plot
+- `{triplet_base}_bones.png` — Bone length consistency chart
+- `summary.txt` — Per-clip metrics (bone CV, reprojection error, PASS/CHECK)
+
+**Verification criteria:**
+- Bone length consistency across frames (coefficient of variation < 0.1)
+- Reprojection error: project 3D back to 2D, target < 10 pixels mean
+- Caregiver skeleton anatomically plausible when present
 
 ---
 
