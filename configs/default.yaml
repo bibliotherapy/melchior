@@ -78,6 +78,13 @@ training:
   cv_folds: 6  # patient-level cross-validation (leave-4-out)
   class_weight: balanced
 
+# Visualization / verification
+visualization:
+  output_dir: outputs/verification_2d
+  confidence_threshold: 0.3
+  mask_alpha: 0.3
+  samples_per_level: 2
+
 # GPU
 device: cuda
 num_gpus: 2
