@@ -1101,18 +1101,25 @@ File: `src/model/train.py`
 ```python
 class HierarchicalTrainer:
     """
-    Stage 1: Binary classifier — ambulatory (L1-L4 walkers) vs non-ambulatory (L4-L5 non-walkers)
-        - Uses: seated_to_standing, crawl (to determine ambulatory status)
-        - Note: L3(kku) and L4(lsa) cannot walk, so ambulatory status isn't purely by level.
-          Use the metadata w_status to determine ground truth ambulatory status.
+    Stage 1: Binary classifier — ambulatory vs non-ambulatory
+        - Routing by actual walking ability (w_status from metadata), NOT by GMFCS level.
+        - Ambulatory: L1(6) + L2(5) + L3(3: ly,mkj,pjw) + L4(2: hdi,jrh) = 16 patients
+        - Non-ambulatory: L3(1: kku) + L4(1: lsa) + L5(6) = 8 patients
+        - Uses: seated_to_standing, crawl (transition quality, independent performance ability)
     
-    Stage 2-A: 3-class classifier — L1 vs L2 vs L3 (on ambulatory subset)
+    Stage 2-A: 3-class classifier — L1 vs L2 vs L3-L4 (on ambulatory subset)
+        - L3 and L4 merged: both can walk (L3 with device, L4 with caregiver assistance)
         - Uses: walk, seated_to_standing, standing_to_seated
-        - Key features: WFI (walker grip), ASA (arm swing), walker_used metadata
+        - Key features: WFI, ASA, walker_engagement, support_source_ratio
     
-    Stage 2-B: 2-class classifier — L4 vs L5 (on non-ambulatory subset)
+    Stage 2-B: 2-class classifier — L3-L4 vs L5 (on non-ambulatory subset)
+        - L3 and L4 merged (only 2 patients total: kku L3, lsa L4)
         - Uses: crawl, side_rolling, seated_to_standing
         - Key features: movement_independence_score, velocity_correlation
+    
+    Note: L3/L4 are merged in both branches because the ambulatory/non-ambulatory
+    split does not cleanly map to GMFCS levels. Final L3 vs L4 resolution relies
+    on device features (walker engagement → L3, caregiver assistance → L4).
     
     Each stage trained independently with its own model instance.
     Patient-level cross-validation.
