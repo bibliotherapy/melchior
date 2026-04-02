@@ -72,10 +72,17 @@ def load_2d_keypoints(skeleton_2d_dir, clip_id):
 
 
 def load_walker_masks(mask_dir, clip_id):
-    """Load walker mask for a clip if available."""
+    """Load walker mask for a clip if available.
+
+    Falls back to FV (front view) mask if clip_id is a triplet base.
+    """
     clip_mask_dir = Path(mask_dir) / clip_id
     if not clip_mask_dir.exists():
-        return None
+        fv_mask_dir = Path(mask_dir) / f"{clip_id}_FV"
+        if fv_mask_dir.exists():
+            clip_mask_dir = fv_mask_dir
+        else:
+            return None
     masks = SAM2VideoTracker.load_masks(clip_mask_dir)
     return masks.get("walker")
 
