@@ -54,8 +54,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Classification Pipeline
 
 ```
-Multi-person 2D pose (MMPose RTMPose) → Camera calibration (Human Pose as Calibration Pattern)
-→ 3D triangulation (OpenCV, dual skeleton) → Feature extraction (Layers 1-3)
+SAM2 manual first-frame annotation → Mask propagation (child, caregiver, walker)
+→ Multi-person 2D pose (MMPose RTMPose) → Mask-guided skeleton assignment
+→ Camera calibration (Human Pose as Calibration Pattern)
+→ 3D triangulation (OpenCV, dual skeleton) → Feature extraction (Layers 1-3 + walker-spatial)
 → Hierarchical 2-stage classification:
     Stage 1: Ambulatory vs Non-ambulatory (binary)
     Stage 2-A: L1 vs L2 vs L3 (walk quality, walker usage)
