@@ -128,18 +128,27 @@ def main():
             logger.warning("No 3D skeleton for %s, skipping", clip_id)
             continue
 
-        child_kp = skeletons.get("child", np.zeros((1, 17, 3)))
-        caregiver_kp = skeletons.get("caregiver", np.zeros_like(child_kp))
+        child_kp_3d = skeletons.get("child", np.zeros((1, 17, 3)))
+        caregiver_kp_3d = skeletons.get("caregiver", np.zeros_like(child_kp_3d))
+
+        # Load 2D keypoints for walker spatial features (pixel-space to match SAM2 masks)
+        kp_2d = load_2d_keypoints(skeleton_2d_dir, clip_id)
+        if kp_2d is not None:
+            child_kp_2d = kp_2d.get("child", np.zeros_like(child_kp_3d))
+            caregiver_kp_2d = kp_2d.get("caregiver", np.zeros_like(child_kp_3d))
+        else:
+            child_kp_2d = np.zeros_like(child_kp_3d)
+            caregiver_kp_2d = np.zeros_like(child_kp_3d)
 
         patient_id = clip_id_to_patient(clip_id)
 
-        # Layer 1: Skeleton features (placeholder — uses src/features/skeleton_features.py)
-        # TODO: implement skeleton_features.extract_skeleton_features(child_kp)
-        T = child_kp.shape[0]
+        # Layer 1: Skeleton features from 3D keypoints (placeholder)
+        # TODO: implement skeleton_features.extract_skeleton_features(child_kp_3d)
+        T = child_kp_3d.shape[0]
         layer1_features = np.zeros((T, 15), dtype=np.float32)
 
-        # Layer 2: Interaction features (placeholder — uses src/features/interaction_features.py)
-        # TODO: implement interaction_features.extract_interaction_features(child_kp, caregiver_kp)
+        # Layer 2: Interaction features from 3D keypoints (placeholder)
+        # TODO: implement interaction_features.extract_interaction_features(child_kp_3d, caregiver_kp_3d)
         layer2_features = np.zeros((T, 10), dtype=np.float32)
 
         # Layer 3: Context vector
@@ -149,12 +158,12 @@ def main():
             logger.warning("No annotation for patient %s, using zero vector", patient_id)
             context_vec = np.zeros(18, dtype=np.float32)
 
-        # Walker spatial features
+        # Walker spatial features (2D pixel-space keypoints + SAM2 masks)
         walker_masks = load_walker_masks(mask_dir, clip_id)
         walker_feats = extract_walker_features(
-            child_keypoints=child_kp,
+            child_keypoints=child_kp_2d,
             walker_masks=walker_masks,
-            caregiver_keypoints=caregiver_kp,
+            caregiver_keypoints=caregiver_kp_2d,
             proximity_threshold_px=walker_threshold,
             fps=fps,
         )
