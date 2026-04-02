@@ -8,7 +8,7 @@ The movement independence score is THE key signal for L4 vs L5 distinction.
 
 Features (10D per frame):
   [0]  caregiver_present        - Binary: 1 if caregiver skeleton detected
-  [1]  min_hand_body_distance   - Closest caregiver wrist to any patient joint
+  [1]  hand_body_proximity      - Inverse min distance: caregiver wrist to patient
   [2]  contact_point_count      - Fraction of patient joints in contact range
   [3]  contact_duration_ratio   - Running ratio of frames with any contact
   [4]  velocity_correlation     - Pearson r of caregiver hand & patient torso speed
