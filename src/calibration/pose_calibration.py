@@ -229,23 +229,37 @@ class PoseCalibrator:
         }
 
     @staticmethod
-    def _compute_reproj_error(pts1, pts2, F):
-        """Compute mean Sampson epipolar error."""
-        n = len(pts1)
+    def _compute_reproj_error_normalized(pts1_norm, pts2_norm, E, focal_avg):
+        """Compute mean symmetric epipolar distance in pixel units.
+
+        Computed on normalized coordinates, then scaled back to pixels
+        for interpretable error reporting.
+
+        Args:
+            pts1_norm: (N, 2) undistorted normalized points in view 1.
+            pts2_norm: (N, 2) undistorted normalized points in view 2.
+            E: (3, 3) essential matrix.
+            focal_avg: average focal length for scaling to pixels.
+
+        Returns:
+            Mean symmetric epipolar distance in pixels.
+        """
+        n = len(pts1_norm)
         if n == 0:
             return float("inf")
-        pts1_h = np.hstack([pts1, np.ones((n, 1))])
-        pts2_h = np.hstack([pts2, np.ones((n, 1))])
-        # Epipolar lines
-        l2 = (F @ pts1_h.T).T  # lines in view 2
-        l1 = (F.T @ pts2_h.T).T  # lines in view 1
-        # Sampson distance
+        pts1_h = np.hstack([pts1_norm, np.ones((n, 1))])
+        pts2_h = np.hstack([pts2_norm, np.ones((n, 1))])
+        # Epipolar lines in normalized coordinates
+        l2 = (E @ pts1_h.T).T
+        l1 = (E.T @ pts2_h.T).T
+        # Symmetric epipolar distance
         d2 = np.abs(np.sum(pts2_h * l2, axis=1))
         d1 = np.abs(np.sum(pts1_h * l1, axis=1))
         denom2 = l2[:, 0] ** 2 + l2[:, 1] ** 2
         denom1 = l1[:, 0] ** 2 + l1[:, 1] ** 2
-        err = d2 / np.sqrt(denom2 + 1e-12) + d1 / np.sqrt(denom1 + 1e-12)
-        return float(np.mean(err) / 2)
+        err_norm = (d2 / np.sqrt(denom2 + 1e-12) + d1 / np.sqrt(denom1 + 1e-12)) / 2
+        # Scale to pixel units
+        return float(np.mean(err_norm) * focal_avg)
 
     def calibrate_patient(self, patient_kp_per_view):
         """Calibrate all camera pairs for a patient.
