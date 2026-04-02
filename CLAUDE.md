@@ -81,7 +81,7 @@ src/calibration/       # Camera calibration via human pose correspondence
 src/triangulation/     # 3D triangulation for patient and caregiver
 src/features/          # Layer 1 skeleton features, Layer 2 interaction features, Layer 3 context vector, walker spatial features
 src/model/             # Lite ST-GCN, multi-stream classifier, hierarchical training
-src/utils/             # Visualization, evaluation
+src/utils/             # Naming utilities, visualization, evaluation
 scripts/annotate_first_frame.py  # Manual first-frame annotation tool for SAM2
 scripts/00-06_*.py     # Batch processing entry points (sequential pipeline)
 configs/default.yaml   # All hyperparameters and paths
