@@ -48,6 +48,7 @@ triangulation:
 features:
   wfi_window_size: 15  # frames for Wrist Fixation Index sliding window
   contact_threshold_m: 0.15  # meters, caregiver-patient contact threshold
+  walker_proximity_threshold_px: 30  # pixels, hand-to-walker "contact" threshold
   fps: 30
 
 # Model
