@@ -262,44 +262,46 @@ def process_clip(clip_id, video_path, skeleton_2d_dir, mask_dir, output_path,
 
     # Open video
     cap = cv2.VideoCapture(str(video_path))
-    if not cap.isOpened():
-        logger.error("Cannot open video: %s", video_path)
-        return None
+    try:
+        if not cap.isOpened():
+            logger.error("Cannot open video: %s", video_path)
+            return None
 
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    T = min(total_frames, T_kp)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        T = min(total_frames, T_kp)
 
-    def frame_generator():
-        frame_idx = 0
-        while frame_idx < T:
-            ret, frame = cap.read()
-            if not ret:
-                break
+        def frame_generator():
+            frame_idx = 0
+            while frame_idx < T:
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-            # Get keypoints for this frame
-            frame_kp = {}
-            for identity, kp_seq in keypoints_dict.items():
-                if frame_idx < kp_seq.shape[0]:
-                    frame_kp[identity] = kp_seq[frame_idx]
+                # Get keypoints for this frame
+                frame_kp = {}
+                for identity, kp_seq in keypoints_dict.items():
+                    if frame_idx < kp_seq.shape[0]:
+                        frame_kp[identity] = kp_seq[frame_idx]
 
-            # Get masks for this frame
-            frame_masks = None
-            if masks_all:
-                frame_masks = {}
-                for identity, mask_seq in masks_all.items():
-                    if frame_idx < mask_seq.shape[0]:
-                        frame_masks[identity] = mask_seq[frame_idx]
+                # Get masks for this frame
+                frame_masks = None
+                if masks_all:
+                    frame_masks = {}
+                    for identity, mask_seq in masks_all.items():
+                        if frame_idx < mask_seq.shape[0]:
+                            frame_masks[identity] = mask_seq[frame_idx]
 
-            yield draw_verification_frame(
-                frame, frame_kp, frame_masks,
-                frame_idx=frame_idx, total_frames=T, clip_id=clip_id,
-                conf_threshold=conf_threshold, mask_alpha=mask_alpha,
-            )
-            frame_idx += 1
+                yield draw_verification_frame(
+                    frame, frame_kp, frame_masks,
+                    frame_idx=frame_idx, total_frames=T, clip_id=clip_id,
+                    conf_threshold=conf_threshold, mask_alpha=mask_alpha,
+                )
+                frame_idx += 1
 
-    result_path = write_verification_video(output_path, frame_generator(), fps=fps)
-    cap.release()
+        result_path = write_verification_video(output_path, frame_generator(), fps=fps)
+    finally:
+        cap.release()
 
     if result_path is None:
         return None
