@@ -29,6 +29,20 @@ def clip_id_to_view(clip_id):
     return None
 
 
+def clip_id_to_triplet_base(clip_id):
+    """Strip view suffix to get triplet base identifier.
+
+    Examples:
+        'kku_w_01_FV' -> 'kku_w_01'
+        'ly_cr_02_LV' -> 'ly_cr_02'
+        'hdi_c_s_01_RV' -> 'hdi_c_s_01'
+    """
+    for suffix in ("_FV", "_LV", "_RV"):
+        if clip_id.endswith(suffix):
+            return clip_id[: -len(suffix)]
+    return clip_id
+
+
 def clip_id_to_movement(clip_id):
     """Extract movement code from clip ID.
 
