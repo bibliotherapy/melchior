@@ -1,16 +1,17 @@
 """Layer 3: Extended metadata / assistive context vector encoder.
 
-Encodes the 18D per-patient context vector from assistive_annotations.json,
+Encodes the 22D per-patient context vector from assistive_annotations.json,
 extending the original 7D metadata (sex, age, movement statuses) with
-walker type, AFO presence, and assistance levels per movement.
+walker type, AFO presence, assistance levels per movement, and chair
+transition status.
 
-18D vector layout:
+22D vector layout:
   [0]  sex                    # 0=female, 1=male
   [1]  age_normalized         # age_months / 72 (0-1)
   [2]  w_status               # 0=cannot, 1=performed, 2=not_needed
   [3]  cr_status              # same encoding
-  [4]  c_s_status             # same encoding
-  [5]  s_c_status             # same encoding
+  [4]  c_s_status             # same encoding (floor sit-to-stand)
+  [5]  s_c_status             # same encoding (floor stand-to-sit)
   [6]  sr_status              # same encoding
   [7]  walker_used            # 0/1
   [8]  walker_type            # 0=none, 1=anterior, 2=posterior
@@ -23,6 +24,10 @@ walker type, AFO presence, and assistance levels per movement.
   [15] caregiver_assist_sr    # 0.0-1.0
   [16] overall_assistance     # 0-6 FIM-like, normalized to 0-1
   [17] device_count           # 0-3, normalized to 0-1
+  [18] cc_s_status            # 0=cannot, 1=performed, 2=not_needed (chair sit-to-stand)
+  [19] s_cc_status            # same encoding (chair stand-to-sit)
+  [20] caregiver_assist_cc_s  # 0.0-1.0 independence scale
+  [21] caregiver_assist_s_cc  # 0.0-1.0
 """
 
 import json
