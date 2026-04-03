@@ -50,7 +50,7 @@ All code created in the current directory will run on this server, so code (incl
 
 2. **Layer 2 — Caregiver Interaction Skeleton:** Multi-person pose estimation detects both patient and caregiver. Interaction features (~10/frame): contact proximity, velocity correlation, movement independence score. The independence score is THE key signal for L4 vs L5 distinction.
 
-3. **Layer 3 — Assistive Context Vector:** 18D metadata vector extending the original 7D (sex, age, movement status) with walker type, AFO presence, assistance levels per movement.
+3. **Layer 3 — Assistive Context Vector:** 22D metadata vector extending the original 7D (sex, age, movement status) with walker type, AFO presence, assistance levels per movement, and chair transition status/assistance.
 
 ### Classification Pipeline
 
