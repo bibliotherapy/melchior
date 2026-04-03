@@ -363,7 +363,7 @@ def plot_movement_quality_by_type(records, labels, output_dir):
     """Generate box plots for movement quality features, grouped by movement type."""
     logger.info("=== Generating movement quality feature distributions ===")
 
-    for movement in ["w", "cr", "c_s", "s_c", "sr"]:
+    for movement in ["w", "cr", "c_s", "s_c", "sr", "cc_s", "s_cc"]:
         mv_records = [r for r in records if r["movement_type"] == movement]
         if not mv_records:
             continue
