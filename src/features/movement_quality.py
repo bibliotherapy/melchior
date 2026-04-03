@@ -316,8 +316,10 @@ class SitToStandQualityFeatures:
         rising_mask &= valid
 
         # ── S1: Transition duration ──
+        # Chair transitions have shorter ROM (elevated start) → 3s norm
+        duration_norm = 5.0 if surface == "floor" else 3.0
         duration_sec = (t_standing - t_start) / fps
-        features[0] = np.clip(duration_sec / 5.0, 0, 1)
+        features[0] = np.clip(duration_sec / duration_norm, 0, 1)
 
         # ── S2: Trunk anterior tilt ──
         spine_vec = _shoulder_center(skeleton_3d) - hip_c
