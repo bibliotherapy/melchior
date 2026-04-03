@@ -196,7 +196,7 @@ class GMFCSDataset(Dataset):
         interaction_feats = feat_data.get("interaction_features",
                                            np.zeros((1, 10), dtype=np.float32))
         context_vec = feat_data.get("context_vector",
-                                     np.zeros(18, dtype=np.float32))
+                                     np.zeros(22, dtype=np.float32))
         walker_feats = feat_data.get("walker_features",
                                       np.zeros(5, dtype=np.float32))
         mq_feats = feat_data.get("movement_quality_features",
