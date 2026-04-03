@@ -52,7 +52,7 @@ from src.features.skeleton_features import (
 logger = logging.getLogger(__name__)
 
 NUM_MOVEMENT_QUALITY_FEATURES = 6
-MOVEMENT_CLASSES = {"w", "cr", "c_s", "s_c", "sr"}
+MOVEMENT_CLASSES = {"w", "cr", "c_s", "s_c", "sr", "cc_s", "s_cc"}
 
 
 # ── Shared helpers ──────────────────────────────────────────────────────
