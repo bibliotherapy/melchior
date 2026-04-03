@@ -65,11 +65,11 @@ def clip_id_to_movement(clip_id):
     compound_codes = {"c_s", "s_c", "cc_s", "s_cc"}
 
     for i, part in enumerate(parts):
-        if part in movement_codes:
-            return part
-        # Check for compound movement codes (c_s, s_c, cc_s, s_cc)
+        # Check compound codes first (consistent with clip_id_to_patient)
         if i + 1 < len(parts):
             compound = f"{part}_{parts[i + 1]}"
             if compound in compound_codes:
                 return compound
+        if part in movement_codes:
+            return part
     return None
