@@ -57,16 +57,17 @@ def clip_id_to_movement(clip_id):
     """Extract movement code from clip ID.
 
     Returns:
-        Movement code string (e.g., 'w', 'cr', 'c_s', 's_c', 'sr').
+        Movement code string (e.g., 'w', 'cr', 'c_s', 's_c', 'sr',
+        'cc_s', 's_cc').
     """
     parts = clip_id.split("_")
     movement_codes = {"w", "cr", "sr"}
-    compound_codes = {"c_s", "s_c"}
+    compound_codes = {"c_s", "s_c", "cc_s", "s_cc"}
 
     for i, part in enumerate(parts):
         if part in movement_codes:
             return part
-        # Check for compound movement codes (c_s, s_c)
+        # Check for compound movement codes (c_s, s_c, cc_s, s_cc)
         if i + 1 < len(parts):
             compound = f"{part}_{parts[i + 1]}"
             if compound in compound_codes:
