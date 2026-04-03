@@ -130,13 +130,13 @@ class ContextVectorEncoder:
         return count
 
     def encode(self, patient_id):
-        """Encode a single patient into an 18D normalized vector.
+        """Encode a single patient into a 22D normalized vector.
 
         Args:
             patient_id: Patient identifier string.
 
         Returns:
-            np.ndarray of shape (18,) with all values in [0, 1].
+            np.ndarray of shape (22,) with all values in [0, 1].
         """
         ann = self.annotations[patient_id]
         lab = self.labels.get(patient_id, {})
@@ -150,7 +150,7 @@ class ContextVectorEncoder:
         age = lab.get("age_months", -1)
         age_val = 0.5 if age == -1 else min(float(age) / 72.0, 1.0)
 
-        # [2-6] movement statuses (normalized: 0/0.5/1.0 for 0/1/2)
+        # [2-6] base movement statuses (normalized: 0/0.5/1.0 for 0/1/2)
         statuses = []
         for mv_key in MOVEMENT_STATUS_KEYS:
             status = self._get_movement_status(ann, mv_key)
@@ -187,6 +187,16 @@ class ContextVectorEncoder:
         device_count = self._count_devices(devices)
         device_count_val = device_count / 3.0
 
+        # [18-19] chair movement statuses
+        chair_statuses = []
+        for mv_key in CHAIR_MOVEMENT_STATUS_KEYS:
+            status = self._get_movement_status(ann, mv_key)
+            chair_statuses.append(status / 2.0)
+
+        # [20-21] chair per-movement caregiver assistance
+        assist_cc_s = self._get_assistance(ann, "chair_seated_to_standing")
+        assist_s_cc = self._get_assistance(ann, "standing_to_chair_seated")
+
         vector = np.array([
             sex_val,            # [0]
             age_val,            # [1]
@@ -206,6 +216,10 @@ class ContextVectorEncoder:
             assist_sr,          # [15]
             overall_val,        # [16]
             device_count_val,   # [17]
+            chair_statuses[0],  # [18] cc_s_status
+            chair_statuses[1],  # [19] s_cc_status
+            assist_cc_s,        # [20] caregiver_assist_cc_s
+            assist_s_cc,        # [21] caregiver_assist_s_cc
         ], dtype=np.float32)
 
         return vector
