@@ -721,14 +721,21 @@ class StandToSitQualityFeatures:
         r_wrist_h = _project_onto_axis(
             skeleton_3d[:, RIGHT_WRIST] - hip_c, up_dir
         ) / torso_len
-        # Support = wrists near or below hip level during descent
-        all_wrist_h = np.concatenate([l_wrist_h[valid], r_wrist_h[valid]])
-        if len(all_wrist_h) > 0:
-            ground_level = np.percentile(all_wrist_h, 5)
-            contact = (
-                (l_wrist_h < ground_level + 0.2)
-                | (r_wrist_h < ground_level + 0.2)
-            ) & valid
+        if surface == "floor":
+            # Floor: support surface = lowest wrist position
+            all_wrist_h = np.concatenate([l_wrist_h[valid], r_wrist_h[valid]])
+            if len(all_wrist_h) > 0:
+                support_level = np.percentile(all_wrist_h, 5)
+            else:
+                support_level = 0.0
+        else:
+            # Chair: target surface = final pelvis height (chair seat)
+            support_level = h_end
+        contact = (
+            (l_wrist_h < support_level + 0.2)
+            | (r_wrist_h < support_level + 0.2)
+        ) & valid
+        if valid.any():
             features[3] = contact.sum() / (valid.sum() + 1e-8)
 
         return features
