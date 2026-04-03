@@ -751,13 +751,20 @@ _MOVEMENT_DISPATCHERS = {
     "s_c": StandToSitQualityFeatures,
 }
 
+# Chair variants map to base movement class + surface flag
+_CHAIR_MAP = {
+    "cc_s": ("c_s", "chair"),
+    "s_cc": ("s_c", "chair"),
+}
+
 
 def extract_movement_quality_features(skeleton_3d, movement_type, config=None):
     """Extract per-clip movement quality features.
 
     Args:
         skeleton_3d: (T, 17, 3) float32, xyz in world coordinates.
-        movement_type: str — 'w', 'cr', 'c_s', 's_c', 'sr', or None.
+        movement_type: str — 'w', 'cr', 'c_s', 's_c', 'sr', 'cc_s',
+            's_cc', or None.
         config: dict with optional 'fps' key.
 
     Returns:
@@ -769,8 +776,14 @@ def extract_movement_quality_features(skeleton_3d, movement_type, config=None):
 
     zero_features = np.zeros(NUM_MOVEMENT_QUALITY_FEATURES, dtype=np.float32)
 
+    # Resolve chair variants to base movement + surface flag
+    surface = "floor"
+    dispatch_type = movement_type
+    if movement_type in _CHAIR_MAP:
+        dispatch_type, surface = _CHAIR_MAP[movement_type]
+
     # Validate movement type
-    if movement_type not in _MOVEMENT_DISPATCHERS:
+    if dispatch_type not in _MOVEMENT_DISPATCHERS:
         if movement_type is not None:
             logger.warning("Unknown movement type '%s', returning zeros", movement_type)
         return zero_features
