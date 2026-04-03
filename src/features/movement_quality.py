@@ -807,8 +807,17 @@ def extract_movement_quality_features(skeleton_3d, movement_type, config=None):
     lat_dir = _lateral_direction(skeleton_3d, valid)
 
     # Dispatch to movement-specific class
-    cls = _MOVEMENT_DISPATCHERS[movement_type]
-    raw_features = cls.compute(skeleton_3d, valid, torso_len, forward_dir, lat_dir, fps)
+    cls = _MOVEMENT_DISPATCHERS[dispatch_type]
+    # Pass surface kwarg only to sit/stand classes that accept it
+    if dispatch_type in ("c_s", "s_c"):
+        raw_features = cls.compute(
+            skeleton_3d, valid, torso_len, forward_dir, lat_dir, fps,
+            surface=surface,
+        )
+    else:
+        raw_features = cls.compute(
+            skeleton_3d, valid, torso_len, forward_dir, lat_dir, fps,
+        )
 
     # Pad to uniform dimension
     result = zero_features.copy()
