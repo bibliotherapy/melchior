@@ -635,8 +635,13 @@ class StandToSitQualityFeatures:
     NUM_FEATURES = 4
 
     @staticmethod
-    def compute(skeleton_3d, valid, torso_len, forward_dir, lat_dir, fps):
+    def compute(skeleton_3d, valid, torso_len, forward_dir, lat_dir, fps,
+                surface="floor"):
         """Compute 4 stand-to-sit quality features.
+
+        Args:
+            surface: "floor" or "chair". Chair transitions use final pelvis
+                height as target surface reference for hand support detection.
 
         Returns:
             (4,) float64 array.
