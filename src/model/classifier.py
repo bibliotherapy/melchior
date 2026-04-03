@@ -4,9 +4,9 @@ Fuses five streams:
   A: Lite ST-GCN skeleton embedding (128D)
   B: Temporal-pooled skeleton features (30D = 15 features x mean+std)
   C: Temporal-pooled interaction features (20D = 10 features x mean+std)
-  D: Context vector passthrough (18D)
+  D: Context vector passthrough (22D)
   E: Walker-skeleton spatial features (5D per clip, no temporal pooling needed)
-Concat (~201D) -> MLP(64) -> hierarchical classification:
+Concat (~205D) -> MLP(64) -> hierarchical classification:
     Stage 1: Ambulatory vs Non-ambulatory (2 classes, routed by w_status)
     Stage 2-A: L1 vs L2 vs L3-L4 (3 classes, ambulatory branch)
     Stage 2-B: L3-L4 vs L5 (2 classes, non-ambulatory branch)
