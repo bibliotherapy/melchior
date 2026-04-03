@@ -233,7 +233,7 @@ class ContextVectorEncoder:
         return {pid: self.encode(pid) for pid in self.annotations}
 
     def get_field_names(self):
-        """Return human-readable names for each of the 18 dimensions."""
+        """Return human-readable names for each of the 22 dimensions."""
         return [
             "sex", "age_normalized",
             "w_status", "cr_status", "c_s_status", "s_c_status", "sr_status",
@@ -242,6 +242,8 @@ class ContextVectorEncoder:
             "assist_walk", "assist_seated_to_standing",
             "assist_crawl", "assist_side_rolling",
             "overall_assistance", "device_count",
+            "cc_s_status", "s_cc_status",
+            "assist_chair_seated_to_standing", "assist_standing_to_chair_seated",
         ]
 
     def print_summary(self, patient_id):
