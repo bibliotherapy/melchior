@@ -1,0 +1,9 @@
+patient_id,sex,age_months,gmfcs_level,fim_score,walker_type,afo_laterality,acrylic_stand,clip_id,movement,device,surface,assistance,notes
+kku,M,28,3,5,posterior,none,Y,kku_w_01,w,W,-,1.0,walks with walker independently
+kku,M,28,3,5,posterior,none,Y,kku_w_02,w,W,-,1.0,
+kku,M,28,3,5,posterior,none,Y,kku_cr_01,cr,N,-,1.0,reciprocal crawl
+kku,M,28,3,5,posterior,none,Y,kku_c_s_01,c_s,S,F,0.8,uses acrylic stand from floor
+kku,M,28,3,5,posterior,none,Y,kku_cc_s_01,cc_s,N,C,0.6,from chair with minimal help
+kku,M,28,3,5,posterior,none,Y,kku_s_c_01,s_c,N,F,0.8,sits to floor standby
+kku,M,28,3,5,posterior,none,Y,kku_s_cc_01,s_cc,N,C,0.6,sits to chair minimal help
+kku,M,28,3,5,posterior,none,Y,kku_sr_01,sr,N,-,0.4,caregiver moderate assist
