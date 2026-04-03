@@ -272,8 +272,14 @@ class SitToStandQualityFeatures:
     NUM_FEATURES = 6
 
     @staticmethod
-    def compute(skeleton_3d, valid, torso_len, forward_dir, lat_dir, fps):
+    def compute(skeleton_3d, valid, torso_len, forward_dir, lat_dir, fps,
+                surface="floor"):
         """Compute 6 sit-to-stand quality features.
+
+        Args:
+            surface: "floor" or "chair". Chair transitions use shorter
+                duration normalization and pelvis-height-based support
+                surface reference instead of wrist-percentile ground level.
 
         Returns:
             (6,) float64 array.
