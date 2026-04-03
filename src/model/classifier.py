@@ -58,7 +58,7 @@ class MultiStreamClassifier(nn.Module):
             stgcn_dim +            # Stream A: 128D
             pooled_skeleton_dim +  # Stream B: 30D
             pooled_interaction_dim +  # Stream C: 20D
-            context_vector_dim +   # Stream D: 18D
+            context_vector_dim +   # Stream D: 22D
             walker_feature_dim     # Stream E: 5D
         )
 
