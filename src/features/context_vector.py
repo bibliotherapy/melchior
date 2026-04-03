@@ -65,7 +65,7 @@ AMBULATORY_LEVELS = {1, 2, 3}
 
 
 class ContextVectorEncoder:
-    """Encodes per-patient assistive context into an 18D normalized vector."""
+    """Encodes per-patient assistive context into a 22D normalized vector."""
 
     def __init__(self, annotations_path, labels_path):
         """
