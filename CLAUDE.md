@@ -93,8 +93,8 @@ configs/default.yaml   # All hyperparameters and paths
 
 - **Patient-level splits only** — all clips from one patient in the same fold. No cross-patient leakage.
 - **Triplet = 3 synchronized viewpoints** of one movement: `{patient}_{movement}_{num}_{FV|LV|RV}.mp4`
-- **5 movements:** walk (w), crawl (cr), seated_to_standing (c_s), standing_to_seated (s_c), side_rolling (sr)
-- **Excluded:** static seated, run, jump (cause shortcut learning)
+- **7 movements:** walk (w), crawl (cr), seated_to_standing (c_s), standing_to_seated (s_c), side_rolling (sr), chair_seated_to_standing (cc_s), standing_to_chair_seated (s_cc)
+- **Excluded:** static seated, run, jump (cause shortcut learning); seated_to_chair_seated (96% L3-exclusive, shortcut risk)
 - **data/ is gitignored** — raw videos and processed outputs stay local
 
 ## GMFCS Level Discrimination Keys
