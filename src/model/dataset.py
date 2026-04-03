@@ -7,7 +7,7 @@ GMFCSDataset loads from npz feature files and returns:
   - skeleton:             (T, 17, 3) raw 3D skeleton, padded/truncated
   - skeleton_features:    (T, 15) Layer 1 device-proxy features
   - interaction_features: (T, 10) Layer 2 caregiver interaction features
-  - context_vector:       (18,) Layer 3 metadata
+  - context_vector:       (22,) Layer 3 metadata
   - walker_features:      (5,) walker-skeleton spatial features
   - movement_quality:     (6,) per-clip movement quality features
   - mask:                 (T,) 1.0 for real frames, 0.0 for padding
