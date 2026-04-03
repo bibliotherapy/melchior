@@ -116,7 +116,7 @@ class MultiStreamClassifier(nn.Module):
             stgcn_embedding: (B, 128) from Lite ST-GCN (Stream A).
             skeleton_features: (B, T, 15) Layer 1 features (Stream B).
             interaction_features: (B, T, 10) Layer 2 features (Stream C).
-            context_vector: (B, 18) Layer 3 metadata (Stream D).
+            context_vector: (B, 22) Layer 3 metadata (Stream D).
             walker_features: (B, 5) walker spatial features (Stream E).
             stage: For hierarchical mode — 1, "2a", or "2b".
                 If None in hierarchical mode, returns all stage outputs.
