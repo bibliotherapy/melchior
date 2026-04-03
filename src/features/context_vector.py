@@ -35,11 +35,17 @@ import numpy as np
 from pathlib import Path
 
 
-# Movement keys used across the pipeline
-MOVEMENTS = ["walk", "crawl", "seated_to_standing", "standing_to_seated", "side_rolling"]
+# Movement keys used across the pipeline (floor + chair variants)
+MOVEMENTS = [
+    "walk", "crawl", "seated_to_standing", "standing_to_seated", "side_rolling",
+    "chair_seated_to_standing", "standing_to_chair_seated",
+]
 
-# Short keys for the 7D status portion of the vector
+# Short keys for the base 5 movement status portion of the vector [2-6]
 MOVEMENT_STATUS_KEYS = ["walk", "crawl", "seated_to_standing", "standing_to_seated", "side_rolling"]
+
+# Chair movement status keys appended at [18-19]
+CHAIR_MOVEMENT_STATUS_KEYS = ["chair_seated_to_standing", "standing_to_chair_seated"]
 
 # Walker type encoding
 WALKER_TYPE_MAP = {"none": 0, "anterior": 1, "posterior": 2, "body_support": 2}
