@@ -228,7 +228,7 @@ class ContextVectorEncoder:
         """Encode all patients.
 
         Returns:
-            dict mapping patient_id -> np.ndarray of shape (18,)
+            dict mapping patient_id -> np.ndarray of shape (22,)
         """
         return {pid: self.encode(pid) for pid in self.annotations}
 
