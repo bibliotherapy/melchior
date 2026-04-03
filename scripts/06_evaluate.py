@@ -268,7 +268,7 @@ def main():
                 stgcn_dim=stgcn.output_dim,
                 skeleton_feature_dim=model_cfg.get("skeleton_feature_dim", 15),
                 interaction_feature_dim=model_cfg.get("interaction_feature_dim", 10),
-                context_vector_dim=model_cfg.get("context_vector_dim", 18),
+                context_vector_dim=model_cfg.get("context_vector_dim", 22),
                 walker_feature_dim=model_cfg.get("walker_feature_dim", 5),
                 hidden_dim=fusion_cfg.get("hidden_dim", 64),
                 dropout=fusion_cfg.get("dropout", 0.3),
