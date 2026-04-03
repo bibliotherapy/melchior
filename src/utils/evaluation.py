@@ -492,9 +492,16 @@ def compute_permutation_importance(stgcn, classifier, dataset, stage_arg,
     for col, name in enumerate(inter_names):
         streams.append(("interaction_features", col, f"inter_{name}", True))
     # Context vector: permute each dimension
-    ctx_names = [f"ctx_{i}" for i in range(18)]
-    for col in range(18):
-        streams.append(("context_vector", col, ctx_names[col], False))
+    from src.features.context_vector import ContextVectorEncoder
+    ctx_field_names = ContextVectorEncoder.FIELD_NAMES if hasattr(
+        ContextVectorEncoder, 'FIELD_NAMES') else None
+    if ctx_field_names is None:
+        # Derive from dataset — first sample's context vector length
+        sample = dataset[0]
+        ctx_dim = sample["context_vector"].shape[0]
+        ctx_field_names = [f"ctx_{i}" for i in range(ctx_dim)]
+    for col, name in enumerate(ctx_field_names):
+        streams.append(("context_vector", col, f"ctx_{name}", False))
     # Walker features: permute each dimension
     walker_names = ["walker_dist", "walker_engage", "walker_lat",
                     "walker_height", "walker_presence"]
