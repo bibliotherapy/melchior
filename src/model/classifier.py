@@ -40,7 +40,7 @@ class MultiStreamClassifier(nn.Module):
             stgcn_dim: Output dimension from Lite ST-GCN (Stream A).
             skeleton_feature_dim: Number of Layer 1 skeleton features.
             interaction_feature_dim: Number of Layer 2 interaction features.
-            context_vector_dim: Dimension of Layer 3 context vector.
+            context_vector_dim: Dimension of Layer 3 context vector (22D).
             walker_feature_dim: Number of walker spatial features (Stream E).
             hidden_dim: Hidden layer dimension in fusion MLP.
             dropout: Dropout rate.
