@@ -833,7 +833,7 @@ def get_movement_quality_feature_names(movement_type):
     """Return human-readable names for the features of a given movement type.
 
     Args:
-        movement_type: str — 'w', 'cr', 'c_s', 's_c', 'sr'.
+        movement_type: str — 'w', 'cr', 'c_s', 's_c', 'sr', 'cc_s', 's_cc'.
 
     Returns:
         List of strings. Length = NUM_MOVEMENT_QUALITY_FEATURES (padded names).
@@ -853,6 +853,14 @@ def get_movement_quality_feature_names(movement_type):
             "sts_com_jerk_smoothness",
             "sts_knee_extension_symmetry",
             "sts_post_transition_sway",
+        ],
+        "cc_s": [
+            "chair_sts_transition_duration",
+            "chair_sts_trunk_anterior_tilt",
+            "chair_sts_hand_support_contact",
+            "chair_sts_com_jerk_smoothness",
+            "chair_sts_knee_extension_symmetry",
+            "chair_sts_post_transition_sway",
         ],
         "cr": [
             "crawl_reciprocal_pattern_index",
@@ -874,6 +882,12 @@ def get_movement_quality_feature_names(movement_type):
             "stsi_controlled_deceleration",
             "stsi_impact_softness",
             "stsi_hand_support_frequency",
+        ],
+        "s_cc": [
+            "chair_stsi_descent_velocity_consistency",
+            "chair_stsi_controlled_deceleration",
+            "chair_stsi_impact_softness",
+            "chair_stsi_hand_support_frequency",
         ],
     }
     raw = names_map.get(movement_type, [])
