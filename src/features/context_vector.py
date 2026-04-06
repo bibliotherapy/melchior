@@ -1,33 +1,32 @@
-"""Layer 3: Extended metadata / assistive context vector encoder.
+"""Layer 3: Per-clip assistive context vector encoder.
 
-Encodes the 22D per-patient context vector from assistive_annotations.json,
-extending the original 7D metadata (sex, age, movement statuses) with
-walker type, AFO presence, assistance levels per movement, and chair
-transition status.
+Encodes an 18D per-clip context vector from assistive_annotations.json.
+The vector is split into a patient-invariant zone (same for all clips
+from a patient) and a clip-specific zone (varies by movement type).
 
-22D vector layout:
-  [0]  sex                    # 0=female, 1=male
-  [1]  age_normalized         # age_months / 72 (0-1)
-  [2]  w_status               # 0=cannot, 1=performed, 2=not_needed
-  [3]  cr_status              # same encoding
-  [4]  c_s_status             # same encoding (floor sit-to-stand)
-  [5]  s_c_status             # same encoding (floor stand-to-sit)
-  [6]  sr_status              # same encoding
-  [7]  walker_used            # 0/1
-  [8]  walker_type            # 0=none, 1=anterior, 2=posterior
-  [9]  afo_present            # 0/1
-  [10] afo_laterality         # 0=none, 1=unilateral, 2=bilateral
-  [11] support_surface_used   # 0/1 (acrylic stand)
-  [12] caregiver_assist_walk  # 0.0-1.0 independence scale
-  [13] caregiver_assist_c_s   # 0.0-1.0
-  [14] caregiver_assist_crawl # 0.0-1.0
-  [15] caregiver_assist_sr    # 0.0-1.0
-  [16] overall_assistance     # 0-6 FIM-like, normalized to 0-1
-  [17] device_count           # 0-3, normalized to 0-1
-  [18] cc_s_status            # 0=cannot, 1=performed, 2=not_needed (chair sit-to-stand)
-  [19] s_cc_status            # same encoding (chair stand-to-sit)
-  [20] caregiver_assist_cc_s  # 0.0-1.0 independence scale
-  [21] caregiver_assist_s_cc  # 0.0-1.0
+18D vector layout:
+
+  Patient-Invariant Zone [0-10] — "Who is this patient?"
+  [0]  sex                   # 0=female, 1=male
+  [1]  age_normalized        # age_months / 72 (0-1)
+  [2]  w_status              # 0=cannot, 0.5=performed, 1.0=not_needed
+  [3]  cr_status             # same encoding
+  [4]  c_s_status            # floor sit-to-stand
+  [5]  s_c_status            # floor stand-to-sit
+  [6]  sr_status             # side rolling
+  [7]  cc_s_status           # chair sit-to-stand
+  [8]  s_cc_status           # chair stand-to-sit
+  [9]  overall_assistance    # FIM 0-6 normalized → 0-1
+  [10] device_count          # 0-3 normalized → 0-1
+
+  Clip-Specific Zone [11-17] — "What's happening in THIS clip?"
+  [11] clip_walker           # 0/1 — walker used in THIS movement
+  [12] clip_walker_type      # 0/0.5/1.0 (none/anterior/posterior)
+  [13] clip_afo              # 0/1 — AFO worn during THIS movement
+  [14] clip_afo_laterality   # 0/0.5/1.0 (none/unilateral/bilateral)
+  [15] clip_acrylic_stand    # 0/1 — acrylic stand used
+  [16] clip_surface          # 0=floor, 0.5=n/a, 1.0=chair
+  [17] clip_assistance       # 0.0-1.0 independence for THIS movement
 """
 
 import json
@@ -44,7 +43,7 @@ MOVEMENTS = [
 # Short keys for the base 5 movement status portion of the vector [2-6]
 MOVEMENT_STATUS_KEYS = ["walk", "crawl", "seated_to_standing", "standing_to_seated", "side_rolling"]
 
-# Chair movement status keys appended at [18-19]
+# Chair movement status keys at [7-8]
 CHAIR_MOVEMENT_STATUS_KEYS = ["chair_seated_to_standing", "standing_to_chair_seated"]
 
 # Walker type encoding
@@ -63,9 +62,35 @@ AFO_LATERALITY_MAP = {
 # L4-L5: non-ambulatory, movements absent because they cannot perform them
 AMBULATORY_LEVELS = {1, 2, 3}
 
+# Movement code (from clip_id) → annotation key (in per_movement)
+MOVEMENT_CODE_MAP = {
+    "w": "walk",
+    "cr": "crawl",
+    "c_s": "seated_to_standing",
+    "s_c": "standing_to_seated",
+    "sr": "side_rolling",
+    "cc_s": "chair_seated_to_standing",
+    "s_cc": "standing_to_chair_seated",
+}
+
+# Device string → (walker, afo, acrylic_stand) decomposition
+DEVICE_DECOMPOSITION = {
+    "none":           (0, 0, 0),
+    "walker":         (1, 0, 0),
+    "afo_only":       (0, 1, 0),
+    "acrylic_stand":  (0, 0, 1),
+    "walker_and_afo": (1, 1, 0),
+}
+
+# Movement code → surface type (floor=0, n/a=0.5, chair=1.0)
+SURFACE_MAP = {
+    "c_s": 0.0, "s_c": 0.0,      # floor transitions
+    "cc_s": 1.0, "s_cc": 1.0,    # chair transitions
+}
+
 
 class ContextVectorEncoder:
-    """Encodes per-patient assistive context into a 22D normalized vector."""
+    """Encodes per-clip assistive context into an 18D normalized vector."""
 
     def __init__(self, annotations_path, labels_path):
         """
@@ -129,18 +154,22 @@ class ContextVectorEncoder:
             count += 1
         return count
 
-    def encode(self, patient_id):
-        """Encode a single patient into a 22D normalized vector.
+    def encode(self, patient_id, movement_type=None):
+        """Encode a single clip into an 18D normalized vector.
 
         Args:
             patient_id: Patient identifier string.
+            movement_type: Short movement code (e.g. "w", "cr", "cc_s").
+                If None, clip-specific zone is filled with zeros.
 
         Returns:
-            np.ndarray of shape (22,) with all values in [0, 1].
+            np.ndarray of shape (18,) with all values in [0, 1].
         """
         ann = self.annotations[patient_id]
         lab = self.labels.get(patient_id, {})
         devices = ann.get("devices", {})
+
+        # ── Patient-Invariant Zone [0-10] ──────────────────────────────
 
         # [0] sex: 0=female, 1=male, 0.5 if unknown (-1)
         sex = lab.get("sex", -1)
@@ -156,103 +185,130 @@ class ContextVectorEncoder:
             status = self._get_movement_status(ann, mv_key)
             statuses.append(status / 2.0)  # normalize 0-2 to 0-1
 
-        # [7] walker_used
-        walker_used = 1.0 if devices.get("walker", False) else 0.0
-
-        # [8] walker_type (normalized: 0/0.5/1.0 for 0/1/2)
-        walker_type = self._safe_walker_type(devices.get("walker_type", "none"))
-        walker_type_val = walker_type / 2.0
-
-        # [9] afo_present
-        afo_present = 1.0 if devices.get("afo", False) else 0.0
-
-        # [10] afo_laterality (normalized: 0/0.5/1.0 for 0/1/2)
-        afo_lat = self._safe_afo_laterality(devices.get("afo_laterality", "none"))
-        afo_lat_val = afo_lat / 2.0
-
-        # [11] support_surface_used
-        support_surface = 1.0 if devices.get("acrylic_stand", False) else 0.0
-
-        # [12-15] per-movement caregiver assistance (already 0.0-1.0)
-        assist_walk = self._get_assistance(ann, "walk")
-        assist_c_s = self._get_assistance(ann, "seated_to_standing")
-        assist_crawl = self._get_assistance(ann, "crawl")
-        assist_sr = self._get_assistance(ann, "side_rolling")
-
-        # [16] overall_assistance: FIM-like 0-6 normalized to 0-1
-        overall = ann.get("overall_assistance", 0)
-        overall_val = float(overall) / 6.0
-
-        # [17] device_count: 0-3 normalized to 0-1
-        device_count = self._count_devices(devices)
-        device_count_val = device_count / 3.0
-
-        # [18-19] chair movement statuses
+        # [7-8] chair movement statuses
         chair_statuses = []
         for mv_key in CHAIR_MOVEMENT_STATUS_KEYS:
             status = self._get_movement_status(ann, mv_key)
             chair_statuses.append(status / 2.0)
 
-        # [20-21] chair per-movement caregiver assistance
-        assist_cc_s = self._get_assistance(ann, "chair_seated_to_standing")
-        assist_s_cc = self._get_assistance(ann, "standing_to_chair_seated")
+        # [9] overall_assistance: FIM-like 0-6 normalized to 0-1
+        overall = ann.get("overall_assistance", 0)
+        overall_val = float(overall) / 6.0
+
+        # [10] device_count: 0-3 normalized to 0-1
+        device_count = self._count_devices(devices)
+        device_count_val = device_count / 3.0
+
+        # ── Clip-Specific Zone [11-17] ─────────────────────────────────
+
+        ann_key = MOVEMENT_CODE_MAP.get(movement_type) if movement_type else None
+        per_movement = ann.get("per_movement", {})
+
+        if ann_key is None:
+            # movement_type not provided or not recognized — zero out clip zone
+            clip_walker = 0.0
+            clip_walker_type = 0.0
+            clip_afo = 0.0
+            clip_afo_lat = 0.0
+            clip_acrylic = 0.0
+            clip_surface = 0.5
+            clip_assistance = 0.0
+        else:
+            mv_data = per_movement.get(ann_key)
+
+            if mv_data is not None:
+                # Per-movement annotation exists — decompose device string
+                device_str = mv_data.get("device", "none")
+                if isinstance(device_str, str) and device_str.startswith("TODO"):
+                    device_str = "none"
+                walker_flag, afo_flag, acrylic_flag = DEVICE_DECOMPOSITION.get(
+                    device_str, (0, 0, 0)
+                )
+
+                clip_walker = float(walker_flag)
+                clip_walker_type = (
+                    self._safe_walker_type(devices.get("walker_type", "none")) / 2.0
+                    if walker_flag else 0.0
+                )
+                clip_afo = float(afo_flag)
+                clip_afo_lat = (
+                    self._safe_afo_laterality(devices.get("afo_laterality", "none")) / 2.0
+                    if afo_flag else 0.0
+                )
+                clip_acrylic = float(acrylic_flag)
+                clip_surface = SURFACE_MAP.get(movement_type, 0.5)
+                clip_assistance = float(mv_data.get("assistance", 0.0))
+            else:
+                # Movement not in per_movement — fall back to patient-level defaults
+                clip_walker = 1.0 if devices.get("walker", False) else 0.0
+                clip_walker_type = (
+                    self._safe_walker_type(devices.get("walker_type", "none")) / 2.0
+                    if devices.get("walker", False) else 0.0
+                )
+                clip_afo = 1.0 if devices.get("afo", False) else 0.0
+                clip_afo_lat = (
+                    self._safe_afo_laterality(devices.get("afo_laterality", "none")) / 2.0
+                    if devices.get("afo", False) else 0.0
+                )
+                clip_acrylic = 1.0 if devices.get("acrylic_stand", False) else 0.0
+                clip_surface = SURFACE_MAP.get(movement_type, 0.5)
+                clip_assistance = overall_val  # fall back to overall
+
+        # ── Assemble 18D vector ────────────────────────────────────────
 
         vector = np.array([
             sex_val,            # [0]
             age_val,            # [1]
-            statuses[0],        # [2] w_status
-            statuses[1],        # [3] cr_status
-            statuses[2],        # [4] c_s_status
-            statuses[3],        # [5] s_c_status
-            statuses[4],        # [6] sr_status
-            walker_used,        # [7]
-            walker_type_val,    # [8]
-            afo_present,        # [9]
-            afo_lat_val,        # [10]
-            support_surface,    # [11]
-            assist_walk,        # [12]
-            assist_c_s,         # [13]
-            assist_crawl,       # [14]
-            assist_sr,          # [15]
-            overall_val,        # [16]
-            device_count_val,   # [17]
-            chair_statuses[0],  # [18] cc_s_status
-            chair_statuses[1],  # [19] s_cc_status
-            assist_cc_s,        # [20] caregiver_assist_cc_s
-            assist_s_cc,        # [21] caregiver_assist_s_cc
+            statuses[0],        # [2]  w_status
+            statuses[1],        # [3]  cr_status
+            statuses[2],        # [4]  c_s_status
+            statuses[3],        # [5]  s_c_status
+            statuses[4],        # [6]  sr_status
+            chair_statuses[0],  # [7]  cc_s_status
+            chair_statuses[1],  # [8]  s_cc_status
+            overall_val,        # [9]  overall_assistance
+            device_count_val,   # [10] device_count
+            clip_walker,        # [11]
+            clip_walker_type,   # [12]
+            clip_afo,           # [13]
+            clip_afo_lat,       # [14]
+            clip_acrylic,       # [15]
+            clip_surface,       # [16]
+            clip_assistance,    # [17]
         ], dtype=np.float32)
 
         return vector
 
     def encode_all(self):
-        """Encode all patients.
+        """Encode all patients with movement_type=None (patient-invariant zone only).
+
+        Deprecated: Use encode(patient_id, movement_type) for per-clip encoding.
 
         Returns:
-            dict mapping patient_id -> np.ndarray of shape (22,)
+            dict mapping patient_id -> np.ndarray of shape (18,)
         """
-        return {pid: self.encode(pid) for pid in self.annotations}
+        return {pid: self.encode(pid, movement_type=None) for pid in self.annotations}
 
     def get_field_names(self):
-        """Return human-readable names for each of the 22 dimensions."""
+        """Return human-readable names for each of the 18 dimensions."""
         return [
             "sex", "age_normalized",
             "w_status", "cr_status", "c_s_status", "s_c_status", "sr_status",
-            "walker_used", "walker_type", "afo_present", "afo_laterality",
-            "support_surface_used",
-            "assist_walk", "assist_seated_to_standing",
-            "assist_crawl", "assist_side_rolling",
-            "overall_assistance", "device_count",
             "cc_s_status", "s_cc_status",
-            "assist_chair_seated_to_standing", "assist_standing_to_chair_seated",
+            "overall_assistance", "device_count",
+            "clip_walker", "clip_walker_type",
+            "clip_afo", "clip_afo_laterality",
+            "clip_acrylic_stand", "clip_surface", "clip_assistance",
         ]
 
-    def print_summary(self, patient_id):
-        """Print a readable summary of a patient's context vector."""
-        vec = self.encode(patient_id)
+    def print_summary(self, patient_id, movement_type=None):
+        """Print a readable summary of a clip's context vector."""
+        vec = self.encode(patient_id, movement_type)
         ann = self.annotations[patient_id]
         names = self.get_field_names()
         print(f"\n{'='*60}")
-        print(f"Patient: {patient_id}  |  GMFCS Level: {ann['gmfcs_level']}")
+        mv_str = f" | Movement: {movement_type}" if movement_type else ""
+        print(f"Patient: {patient_id}  |  GMFCS Level: {ann['gmfcs_level']}{mv_str}")
         print(f"{'='*60}")
         for i, (name, val) in enumerate(zip(names, vec)):
             print(f"  [{i:2d}] {name:<28s} = {val:.3f}")
@@ -260,29 +316,51 @@ class ContextVectorEncoder:
 
 
 def verify_context_vectors(annotations_path, labels_path):
-    """Verification function: print vectors for one L1, one L3, one L5 patient.
+    """Verification: test per-clip encoding with different movements.
 
-    Expected patterns:
-      L1: all assistance = 1.0, no devices, overall_assistance = 1.0
-      L3: walker_used = 1, walk assistance = 1.0, overall_assistance ~ 0.83
-      L5: all assistance low (0.0-0.2), no devices, overall_assistance ~ 0.17
+    Checks:
+      - Same patient + different movements → different vectors
+      - Shape is (18,), values in [0, 1]
+      - L1/L3/L5 patients produce expected patterns
     """
     encoder = ContextVectorEncoder(annotations_path, labels_path)
 
-    # Pick representative patients
-    l1_patient = "jyh"
-    l3_patient = "kku"
-    l5_patient = "ajy"
+    # Per-clip verification: same patient, different movements
+    print("=== Per-clip verification (patient kku, L3 walker user) ===")
+    encoder.print_summary("kku", "w")    # walk — walker=1
+    encoder.print_summary("kku", "cr")   # crawl — walker=0
+    encoder.print_summary("kku", "c_s")  # floor sit-to-stand — surface=0
 
-    for pid in [l1_patient, l3_patient, l5_patient]:
-        encoder.print_summary(pid)
+    # Cross-level check
+    print("\n=== Cross-level verification ===")
+    encoder.print_summary("jyh", "w")    # L1, no devices
+    encoder.print_summary("ajy", "sr")   # L5, low assistance
 
-    # Encode all and print shape summary
+    # movement_type=None fallback
+    print("\n=== movement_type=None fallback ===")
+    encoder.print_summary("kku", None)
+
+    # Verify shape and value range
+    vec_walk = encoder.encode("kku", "w")
+    vec_crawl = encoder.encode("kku", "cr")
+    assert vec_walk.shape == (18,), f"Expected (18,), got {vec_walk.shape}"
+    assert vec_walk.min() >= 0.0, f"Vector has negative values"
+    assert vec_walk.max() <= 1.0, f"Vector exceeds 1.0"
+
+    # Same patient, different movements → different vectors
+    assert not np.array_equal(vec_walk, vec_crawl), \
+        "Walk and crawl vectors should differ for walker user"
+    # Patient-invariant zone should be identical
+    assert np.array_equal(vec_walk[:11], vec_crawl[:11]), \
+        "Patient-invariant zone should be identical across movements"
+
+    # Encode all (deprecated path)
     all_vectors = encoder.encode_all()
     stacked = np.stack(list(all_vectors.values()))
     print(f"\nAll patients encoded: {len(all_vectors)} patients, vector shape: {stacked.shape}")
     print(f"Value range: [{stacked.min():.3f}, {stacked.max():.3f}]")
 
+    print("\n✓ All verifications passed.")
     return all_vectors
 
 
