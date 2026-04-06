@@ -48,6 +48,11 @@ AFO_OPTIONS = [
 
 YESNO = [(True, "Yes"), (False, "No")]
 
+FIM_LABELS = {
+    0: "Dependent", 1: "MaxAssist", 2: "ModAssist", 3: "MinAssist",
+    4: "ContactGuard", 5: "Supervision/Device", 6: "Independent",
+}
+
 # Movement + surface → final movement code
 SURFACE_RESOLVE = {
     ("c_s", "floor"): "c_s",   ("c_s", "chair"): "cc_s",
