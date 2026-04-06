@@ -175,7 +175,7 @@ def main():
 
         # Layer 3: Context vector
         try:
-            context_vec = context_encoder.encode(patient_id)
+            context_vec = context_encoder.encode(patient_id, movement_type)
         except KeyError:
             logger.warning("No annotation for patient %s, using zero vector", patient_id)
             context_vec = np.zeros(18, dtype=np.float32)
