@@ -473,21 +473,45 @@ def main():
     total = len(triplets)
     done = len(annotations)
 
+    # Determine working set based on redo flags
+    redo_mode = bool(args.redo or args.redo_all)
+    if args.redo_all:
+        redo_set = set(annotations.keys())
+        work_triplets = [t for t in triplets if t["triplet_id"] in redo_set]
+        if not work_triplets:
+            print("  No previously annotated clips to redo.")
+            sys.exit(0)
+    elif args.redo:
+        redo_set = set(args.redo)
+        all_tids = {t["triplet_id"] for t in triplets}
+        unknown = redo_set - all_tids
+        if unknown:
+            print(f"  ERROR: Unknown triplet ID(s): {', '.join(sorted(unknown))}")
+            print(f"  Available IDs: {', '.join(sorted(all_tids))}")
+            sys.exit(1)
+        work_triplets = [t for t in triplets if t["triplet_id"] in redo_set]
+    else:
+        work_triplets = triplets
+
     print(f"\n  GMFCS Clip Annotator")
     print(f"  Clips: {clips_dir}")
-    print(f"  Found: {total} triplets, {done} already annotated")
+    if redo_mode:
+        print(f"  Redo mode: re-annotating {len(work_triplets)} clips")
+    else:
+        print(f"  Found: {total} triplets, {done} already annotated")
     print(f"  Output: {output_path}")
     print(f"  Type number + Enter for each field. Ctrl+C to quit.\n")
 
     player = VideoPlayer()
+    work_total = len(work_triplets)
 
     try:
-        for i, triplet in enumerate(triplets):
+        for i, triplet in enumerate(work_triplets):
             tid = triplet["triplet_id"]
 
-            # Skip already annotated
-            if tid in annotations:
-                print(f"  [{i+1}/{total}] {tid} — already done, skipping")
+            # Skip already annotated (only in normal mode)
+            if not redo_mode and tid in annotations:
+                print(f"  [{i+1}/{work_total}] {tid} — already done, skipping")
                 continue
 
             ann = annotate_triplet(triplet, player)
