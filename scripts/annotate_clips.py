@@ -318,12 +318,14 @@ _AFO_LABELS = _label_lookup(AFO_OPTIONS)
 def format_annotation_summary(ann):
     """Return a human-readable summary of an annotation dict."""
     mv = ann["movement"]
-    mv_label = _MOVEMENT_LABELS.get(mv, mv)
-    if mv in ("cc_s", "s_cc"):
-        mv_label = _MOVEMENT_LABELS.get(mv[:3] if mv == "s_cc" else mv[1:], mv)
-        mv_label += " (Chair)"
+    if mv == "cc_s":
+        mv_label = _MOVEMENT_LABELS.get("c_s", mv) + " (Chair)"
+    elif mv == "s_cc":
+        mv_label = _MOVEMENT_LABELS.get("s_c", mv) + " (Chair)"
     elif mv in ("c_s", "s_c"):
-        mv_label += " (Floor)"
+        mv_label = _MOVEMENT_LABELS.get(mv, mv) + " (Floor)"
+    else:
+        mv_label = _MOVEMENT_LABELS.get(mv, mv)
 
     afo_label = _AFO_LABELS.get(ann["afo"], ann["afo"])
     fim = ann["fim"]
