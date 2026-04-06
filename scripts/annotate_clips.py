@@ -257,6 +257,9 @@ class ClipAnnotator:
             ["floor", "chair"],
         )
 
+        # Hide surface by default (shown when sit/stand movement selected)
+        self.surface_frame.pack_forget()
+
         # AFO
         self._add_button_row(
             panel, "AFO", "afo",
