@@ -64,7 +64,7 @@ model:
     dropout: 0.3
   skeleton_feature_dim: 15  # Layer 1
   interaction_feature_dim: 10  # Layer 2
-  context_vector_dim: 22  # Layer 3 (18 base + 4 chair transition features)
+  context_vector_dim: 18  # Layer 3 per-clip (11 patient-invariant + 7 clip-specific)
   walker_feature_dim: 5  # Walker-skeleton spatial features
   movement_quality_dim: 6  # Per-clip movement quality features (Step 4.2)
 
