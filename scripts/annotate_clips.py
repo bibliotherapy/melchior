@@ -445,6 +445,10 @@ def main():
     parser = argparse.ArgumentParser(description="Terminal clip annotator")
     parser.add_argument("--clips-dir", default="data/video_clips")
     parser.add_argument("--output", default="data/metadata/clip_annotations.json")
+    parser.add_argument("--redo", nargs="+", metavar="TRIPLET_ID",
+                        help="Re-annotate specific triplet(s) by ID")
+    parser.add_argument("--redo-all", action="store_true",
+                        help="Re-annotate all previously annotated clips")
     args = parser.parse_args()
 
     clips_dir = PROJECT_ROOT / args.clips_dir
