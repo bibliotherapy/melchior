@@ -142,7 +142,7 @@ class MultiStreamClassifier(nn.Module):
             stgcn_embedding,     # A: 128D
             pooled_skeleton,     # B: 30D
             pooled_interaction,  # C: 20D
-            context_vector,      # D: 22D
+            context_vector,      # D: 18D
             walker_features,     # E: 5D
         ], dim=1)
 
