@@ -32,7 +32,7 @@ class MultiStreamClassifier(nn.Module):
     """
 
     def __init__(self, stgcn_dim=128, skeleton_feature_dim=15,
-                 interaction_feature_dim=10, context_vector_dim=22,
+                 interaction_feature_dim=10, context_vector_dim=18,
                  walker_feature_dim=5, hidden_dim=64, dropout=0.3,
                  num_classes=5, hierarchical=True):
         """
