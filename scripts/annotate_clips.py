@@ -304,6 +304,61 @@ def sync_to_assistive_annotations(annotations):
     print(f"  Synced to {ann_path}")
 
 
+# ── Confirmation helpers ───────────────────────────────────────────────
+
+def _label_lookup(options):
+    """Build {value: display_label} from options list."""
+    return {v: d for v, d in options}
+
+
+_MOVEMENT_LABELS = _label_lookup(MOVEMENT_OPTIONS)
+_AFO_LABELS = _label_lookup(AFO_OPTIONS)
+
+
+def format_annotation_summary(ann):
+    """Return a human-readable summary of an annotation dict."""
+    mv = ann["movement"]
+    mv_label = _MOVEMENT_LABELS.get(mv, mv)
+    if mv in ("cc_s", "s_cc"):
+        mv_label = _MOVEMENT_LABELS.get(mv[:3] if mv == "s_cc" else mv[1:], mv)
+        mv_label += " (Chair)"
+    elif mv in ("c_s", "s_c"):
+        mv_label += " (Floor)"
+
+    afo_label = _AFO_LABELS.get(ann["afo"], ann["afo"])
+    fim = ann["fim"]
+    fim_label = f"{fim} ({FIM_LABELS.get(fim, '?')})"
+
+    lines = [
+        f"  Movement:   {mv_label}",
+        f"  AFO:        {afo_label}",
+        f"  Walker:     {'Yes' if ann['walker'] else 'No'}",
+        f"  Acrylic:    {'Yes' if ann['acrylic_stand'] else 'No'}",
+        f"  Caregiver:  {'Yes' if ann['caregiver_assistance'] else 'No'}",
+        f"  FIM:        {fim_label}",
+    ]
+
+    width = max(len(l) for l in lines) + 2
+    border = "─" * (width - 2)
+    summary = f"\n  ┌─ Summary {border[10:]}┐\n"
+    for l in lines:
+        summary += f"  │{l}{' ' * (width - len(l) - 1)}│\n"
+    summary += f"  └{border}┘"
+    return summary
+
+
+def confirm_annotation(ann):
+    """Show summary and ask user to confirm. Returns True if confirmed."""
+    print(format_annotation_summary(ann))
+    while True:
+        raw = input("\n  Correct? (Y/n): ").strip().lower()
+        if raw in ("", "y", "yes"):
+            return True
+        if raw in ("n", "no"):
+            return False
+        print("    → Please enter Y or N")
+
+
 # ── Main annotation loop ───────────────────────────────────────────────
 
 def annotate_triplet(triplet, player):
