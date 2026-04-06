@@ -72,7 +72,7 @@ SAM2 manual first-frame annotation → Mask propagation (child, caregiver, walke
 - Stream C: Temporal mean+std pooling on interaction features → 20D
 - Stream D: Context vector passthrough → 18D
 - Stream E: Walker-skeleton spatial features → 5D
-- Fusion: concat (~205D) → MLP(64) → classification head
+- Fusion: concat (~201D) → MLP(64) → classification head
 
 ## Source Layout
 
