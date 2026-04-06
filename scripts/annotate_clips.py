@@ -244,7 +244,7 @@ class ClipAnnotator:
         self.btn_groups = {}
 
         # Movement
-        self._add_button_row(
+        self.movement_frame = self._add_button_row(
             panel, "Movement", "movement",
             list(MOVEMENT_LABELS.values()),
             list(MOVEMENT_LABELS.keys()),
