@@ -363,12 +363,9 @@ class ClipAnnotator:
 
         # Show/hide surface row based on movement
         if field_name == "movement":
-            needs_surface = value in ("c_s", "s_c")
-            if needs_surface:
-                self.surface_frame.pack(fill="x", pady=3)
-                # Reorder: surface should appear after movement
+            if value in ("c_s", "s_c"):
                 self.surface_frame.pack(fill="x", pady=3,
-                                         after=list(self.btn_groups["movement"][0][0].master.master.children.values())[0])
+                                         after=self.movement_frame)
             else:
                 self.surface_frame.pack_forget()
                 self.current_selection.pop("surface", None)
