@@ -366,77 +366,79 @@ def annotate_triplet(triplet, player):
     tid = triplet["triplet_id"]
     pid = triplet["patient_id"]
     mv_from_file = triplet["movement"]
-
-    # Start video playback
     video_path = triplet["clips"].get("f") or next(iter(triplet["clips"].values()))
-    player.play(video_path, window_name=f"{tid}")
 
-    print(f"\n{'='*55}")
-    print(f"  Patient: {pid}  |  Triplet: {tid}")
-    print(f"  Views: {', '.join(sorted(triplet['clips'].keys()))}")
-    print(f"  (Video playing — press q in video window to close)")
-    print(f"{'='*55}")
+    while True:
+        # Start video playback
+        player.play(video_path, window_name=f"{tid}")
 
-    # --- Movement ---
-    # Find default index from filename
-    mv_codes = [opt[0] for opt in MOVEMENT_OPTIONS]
-    default_mv = None
-    if mv_from_file in mv_codes:
-        default_mv = mv_codes.index(mv_from_file) + 1
-    elif mv_from_file == "cc_s":
-        default_mv = mv_codes.index("c_s") + 1
-    elif mv_from_file == "s_cc":
-        default_mv = mv_codes.index("s_c") + 1
+        print(f"\n{'='*55}")
+        print(f"  Patient: {pid}  |  Triplet: {tid}")
+        print(f"  Views: {', '.join(sorted(triplet['clips'].keys()))}")
+        print(f"  (Video playing — press q in video window to close)")
+        print(f"{'='*55}")
 
-    movement = prompt_choice("Movement", MOVEMENT_OPTIONS, default_idx=default_mv)
+        # --- Movement ---
+        mv_codes = [opt[0] for opt in MOVEMENT_OPTIONS]
+        default_mv = None
+        if mv_from_file in mv_codes:
+            default_mv = mv_codes.index(mv_from_file) + 1
+        elif mv_from_file == "cc_s":
+            default_mv = mv_codes.index("c_s") + 1
+        elif mv_from_file == "s_cc":
+            default_mv = mv_codes.index("s_c") + 1
 
-    # --- Surface (only for sit/stand) ---
-    surface = None
-    if movement in ("c_s", "s_c"):
-        default_surf = None
-        if mv_from_file in ("cc_s", "s_cc"):
-            default_surf = 2  # chair
-        surface = prompt_choice("Surface", SURFACE_OPTIONS, default_idx=default_surf)
-        final_movement = SURFACE_RESOLVE.get((movement, surface), movement)
-    else:
-        final_movement = movement
+        movement = prompt_choice("Movement", MOVEMENT_OPTIONS, default_idx=default_mv)
 
-    # --- AFO ---
-    afo = prompt_choice("AFO", AFO_OPTIONS)
+        # --- Surface (only for sit/stand) ---
+        surface = None
+        if movement in ("c_s", "s_c"):
+            default_surf = None
+            if mv_from_file in ("cc_s", "s_cc"):
+                default_surf = 2  # chair
+            surface = prompt_choice("Surface", SURFACE_OPTIONS, default_idx=default_surf)
+            final_movement = SURFACE_RESOLVE.get((movement, surface), movement)
+        else:
+            final_movement = movement
 
-    # --- Walker ---
-    walker = prompt_choice("Walker", YESNO)
+        # --- AFO ---
+        afo = prompt_choice("AFO", AFO_OPTIONS)
 
-    # --- Acrylic Stand ---
-    acrylic = prompt_choice("Acrylic Stand", YESNO)
+        # --- Walker ---
+        walker = prompt_choice("Walker", YESNO)
 
-    # --- Caregiver Assistance ---
-    caregiver = prompt_choice("Caregiver Assist", YESNO)
+        # --- Acrylic Stand ---
+        acrylic = prompt_choice("Acrylic Stand", YESNO)
 
-    # --- FIM ---
-    fim = prompt_fim()
+        # --- Caregiver Assistance ---
+        caregiver = prompt_choice("Caregiver Assist", YESNO)
 
-    player.stop()
+        # --- FIM ---
+        fim = prompt_fim()
 
-    # Build annotation
-    ann = {
-        "triplet_id": tid,
-        "patient_id": pid,
-        "movement": final_movement,
-        "afo": afo,
-        "walker": walker,
-        "acrylic_stand": acrylic,
-        "caregiver_assistance": caregiver,
-        "fim": fim,
-        "clips": list(triplet["clips"].keys()),
-        "annotated_at": datetime.now().isoformat(),
-    }
-    if final_movement in ("c_s", "s_c"):
-        ann["surface"] = "floor"
-    elif final_movement in ("cc_s", "s_cc"):
-        ann["surface"] = "chair"
+        player.stop()
 
-    return ann
+        # Build annotation
+        ann = {
+            "triplet_id": tid,
+            "patient_id": pid,
+            "movement": final_movement,
+            "afo": afo,
+            "walker": walker,
+            "acrylic_stand": acrylic,
+            "caregiver_assistance": caregiver,
+            "fim": fim,
+            "clips": list(triplet["clips"].keys()),
+            "annotated_at": datetime.now().isoformat(),
+        }
+        if final_movement in ("c_s", "s_c"):
+            ann["surface"] = "floor"
+        elif final_movement in ("cc_s", "s_cc"):
+            ann["surface"] = "chair"
+
+        if confirm_annotation(ann):
+            return ann
+        print("  Resetting — replaying video...")
 
 
 def main():
