@@ -394,12 +394,15 @@ class HierarchicalTrainer:
                     if not self.ambulatory_status.get(clip_id_to_patient(c), True)]
         return clip_ids  # stage1 uses all clips
 
-    def train_stage(self, stage_name, n_folds=None):
-        """Train one stage with patient-level cross-validation.
+    def train_stage(self, stage_name, n_folds=None, fixed_split=None):
+        """Train one stage with patient-level cross-validation or fixed split.
 
         Args:
             stage_name: 'stage1', 'stage2a', or 'stage2b'.
             n_folds: number of CV folds (default from config).
+            fixed_split: optional dict with 'train', 'val', 'test' patient
+                lists. When provided, trains a single fold with the given
+                split instead of cross-validation.
 
         Returns:
             dict with per-fold results (predictions, labels, history).
@@ -412,28 +415,34 @@ class HierarchicalTrainer:
         batch_size = self.train_cfg.get("batch_size", 32)
         max_seq_len = 150
 
-        logger.info("=" * 60)
-        logger.info("Training %s (%d classes, %d folds)",
-                     stage_name, num_classes, n_folds)
-        logger.info("=" * 60)
-
         # Filter clips for this stage
         stage_clips = self._filter_clips_for_stage(self.all_clip_ids, stage_name)
         if not stage_clips:
             logger.warning("No clips for %s, skipping", stage_name)
-            return {"folds": []}
+            return {"folds": [], "stage_name": stage_name, "overall_acc": 0.0}
 
-        # Get patients in these clips
         stage_patients = sorted(set(
             clip_id_to_patient(c) for c in stage_clips
         ))
+
+        logger.info("=" * 60)
+        logger.info("Stage %s: %d clips, %d patients",
+                     stage_name, len(stage_clips), len(stage_patients))
+        logger.info("=" * 60)
+
+        # ── Fixed split mode ──
+        if fixed_split is not None:
+            return self._train_fixed_split(
+                stage_name, stage_clips, num_classes, batch_size, max_seq_len,
+                fixed_split,
+            )
+
+        # ── Cross-validation mode ──
         stage_labels = {p: self.labels[p] for p in stage_patients
                         if p in self.labels}
 
-        logger.info("Stage %s: %d clips, %d patients",
-                     stage_name, len(stage_clips), len(stage_patients))
+        logger.info("Cross-validation: %d folds", n_folds)
 
-        # Patient-level splitter
         splitter = PatientLevelSplitter(
             stage_patients, stage_labels, n_folds=n_folds
         )
@@ -521,6 +530,87 @@ class HierarchicalTrainer:
             logger.info("%s overall CV accuracy: %.3f", stage_name, overall_acc)
         else:
             results["overall_acc"] = 0.0
+
+        return results
+
+    def _train_fixed_split(self, stage_name, stage_clips, num_classes,
+                           batch_size, max_seq_len, fixed_split):
+        """Train a single fold with an explicit train/val patient split."""
+        train_patients = set(fixed_split.get("train", []))
+        val_patients = set(fixed_split.get("val", []))
+
+        train_clips = [c for c in stage_clips
+                       if clip_id_to_patient(c) in train_patients]
+        val_clips = [c for c in stage_clips
+                     if clip_id_to_patient(c) in val_patients]
+
+        logger.info("Fixed split: train=%d clips (%s), val=%d clips (%s)",
+                     len(train_clips), sorted(train_patients & set(
+                         clip_id_to_patient(c) for c in stage_clips)),
+                     len(val_clips), sorted(val_patients & set(
+                         clip_id_to_patient(c) for c in stage_clips)))
+
+        results = {"folds": [], "stage_name": stage_name}
+
+        if not train_clips:
+            logger.warning("No train clips for %s with fixed split", stage_name)
+            results["overall_acc"] = 0.0
+            return results
+
+        # Create train dataset
+        train_ds = GMFCSDataset(
+            train_clips, self.features_dir, self.skeleton_3d_dir,
+            self.labels, stage=stage_name, max_seq_len=max_seq_len,
+            ambulatory_status=self.ambulatory_status,
+        )
+        train_loader = DataLoader(
+            train_ds, batch_size=batch_size, shuffle=True,
+            collate_fn=collate_fn, num_workers=0, drop_last=False,
+        )
+
+        # Create val loader (may be None)
+        val_loader = None
+        if val_clips:
+            val_ds = GMFCSDataset(
+                val_clips, self.features_dir, self.skeleton_3d_dir,
+                self.labels, stage=stage_name, max_seq_len=max_seq_len,
+                ambulatory_status=self.ambulatory_status,
+            )
+            val_loader = DataLoader(
+                val_ds, batch_size=batch_size, shuffle=False,
+                collate_fn=collate_fn, num_workers=0,
+            )
+
+        # Fresh models
+        stgcn, classifier = self._create_models(num_classes)
+        class_weights = compute_class_weights(train_ds)
+        logger.info("  Class weights: %s", class_weights.numpy())
+
+        # Train
+        trainer = StageTrainer(
+            stgcn, classifier, stage_name, self.device, self.train_cfg
+        )
+        history = trainer.train(train_loader, val_loader, class_weights)
+
+        # Save model
+        fold_dir = self.output_dir / stage_name / "fold_0"
+        fold_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(stgcn.state_dict(), fold_dir / "stgcn.pt")
+        torch.save(classifier.state_dict(), fold_dir / "classifier.pt")
+
+        results["folds"].append({
+            "fold_idx": 0,
+            "test_acc": 0.0,
+            "test_preds": [],
+            "test_labels": [],
+            "test_clip_ids": [],
+            "history": {k: [float(v) for v in vals]
+                        for k, vals in history.items()},
+            "n_train": len(train_clips),
+            "n_val": len(val_clips),
+        })
+        results["overall_acc"] = 0.0
+        results["fixed_split"] = True
 
         return results
 
