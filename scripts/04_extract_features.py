@@ -30,7 +30,7 @@ from src.features.movement_quality import extract_movement_quality_features
 from src.features.skeleton_features import extract_skeleton_features
 from src.features.walker_features import extract_walker_features
 from src.tracking.sam2_tracker import SAM2VideoTracker
-from src.utils.naming import clip_id_to_movement, clip_id_to_patient
+from src.utils.naming import clip_id_to_movement, clip_id_to_patient, triplet_base_to_front_clip_id
 
 
 def load_config(config_path):
