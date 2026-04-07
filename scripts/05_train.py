@@ -74,6 +74,12 @@ def main():
                         help="Quick test: 5 epochs, 2 folds")
     parser.add_argument("--output-dir", type=str, default=None,
                         help="Override output directory for models")
+    parser.add_argument("--train-patients", type=str, nargs="+", default=None,
+                        help="Fixed train set patient IDs (skip CV)")
+    parser.add_argument("--val-patients", type=str, nargs="+", default=None,
+                        help="Fixed validation set patient IDs")
+    parser.add_argument("--test-patients", type=str, nargs="+", default=None,
+                        help="Fixed test set patient IDs")
     args = parser.parse_args()
 
     # DDP setup
