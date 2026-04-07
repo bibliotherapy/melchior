@@ -134,12 +134,13 @@ class StageTrainer:
             "stage1": 1, "stage2a": "2a", "stage2b": "2b",
         }.get(stage_name, None)
 
-    def train(self, train_loader, val_loader, class_weights=None):
+    def train(self, train_loader, val_loader=None, class_weights=None):
         """Train for one fold.
 
         Args:
             train_loader: DataLoader for training clips.
-            val_loader: DataLoader for validation clips.
+            val_loader: DataLoader for validation clips (None to skip
+                validation and early stopping).
             class_weights: optional tensor of class weights for loss.
 
         Returns:
