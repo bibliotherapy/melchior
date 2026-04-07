@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.pose.multi_person_pose import MultiPersonPoseExtractor
+
 try:
-    from src.pose.multi_person_pose import MultiPersonPoseExtractor
+    import mmpose  # noqa: F401
     _HAS_MMPOSE = True
 except ImportError:
     _HAS_MMPOSE = False
