@@ -124,17 +124,28 @@ def main():
         trainer.output_dir = Path(args.output_dir)
         trainer.log_dir = Path(args.output_dir) / "logs"
 
+    # Build fixed split if specified
+    fixed_split = None
+    if args.train_patients:
+        fixed_split = {
+            "train": args.train_patients,
+            "val": args.val_patients or [],
+            "test": args.test_patients or [],
+        }
+        logger.info("Fixed split: train=%s, val=%s, test=%s",
+                     fixed_split["train"], fixed_split["val"], fixed_split["test"])
+
     # Train
     if args.stage:
         # Single stage
         logger.info("Training single stage: %s", args.stage)
-        results = trainer.train_stage(args.stage)
+        results = trainer.train_stage(args.stage, fixed_split=fixed_split)
         if is_main:
             logger.info("Stage %s accuracy: %.1f%%",
                          args.stage, results.get("overall_acc", 0) * 100)
     else:
         # All stages
-        results = trainer.train_all()
+        results = trainer.train_all(fixed_split=fixed_split)
 
     # Cleanup DDP
     if is_ddp:
