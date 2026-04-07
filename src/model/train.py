@@ -224,7 +224,11 @@ class StageTrainer:
             train_acc = train_correct / max(train_total, 1)
 
             # ── Validate ──
-            val_loss, val_acc, _, _ = self.evaluate(val_loader, criterion)
+            if val_loader is not None:
+                val_loss, val_acc, _, _ = self.evaluate(val_loader, criterion)
+            else:
+                val_loss = train_loss
+                val_acc = train_acc
 
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
@@ -239,14 +243,16 @@ class StageTrainer:
                     scheduler.get_last_lr()[0],
                 )
 
-            # Early stopping check
-            if early_stop.step(val_loss, nn.ModuleList([self.stgcn, self.classifier])):
-                logger.info("[%s] Early stopping at epoch %d (patience=%d)",
-                            self.stage_name, epoch + 1, self.patience)
-                break
+            # Early stopping check (skip if no validation data)
+            if val_loader is not None:
+                if early_stop.step(val_loss, nn.ModuleList([self.stgcn, self.classifier])):
+                    logger.info("[%s] Early stopping at epoch %d (patience=%d)",
+                                self.stage_name, epoch + 1, self.patience)
+                    break
 
-        # Restore best weights
-        early_stop.load_best(nn.ModuleList([self.stgcn, self.classifier]))
+        # Restore best weights (only if validation was used)
+        if val_loader is not None:
+            early_stop.load_best(nn.ModuleList([self.stgcn, self.classifier]))
 
         return history
 
