@@ -99,13 +99,21 @@ def main():
     mask_dir = config.get("tracking", {}).get("mask_output_dir", "data/processed/masks")
 
     pose_cfg = config.get("pose", {})
-    extractor = MultiPersonPoseExtractor(
-        det_model=pose_cfg.get("detector", "rtmdet-m"),
-        pose_model=pose_cfg.get("model", "rtmpose-l"),
-        device=pose_cfg.get("device", "cuda:0"),
-        batch_size=pose_cfg.get("batch_size", 16),
-        confidence_threshold=pose_cfg.get("confidence_threshold", 0.3),
-    )
+    if _HAS_MMPOSE:
+        extractor = MultiPersonPoseExtractor(
+            det_model=pose_cfg.get("detector", "rtmdet-m"),
+            pose_model=pose_cfg.get("model", "rtmpose-l"),
+            device=pose_cfg.get("device", "cuda:0"),
+            batch_size=pose_cfg.get("batch_size", 16),
+            confidence_threshold=pose_cfg.get("confidence_threshold", 0.3),
+        )
+        logger.info("Using MMPose (RTMPose) for pose estimation")
+    else:
+        from src.pose.mediapipe_fallback import MediaPipePoseExtractor
+        extractor = MediaPipePoseExtractor(
+            confidence_threshold=pose_cfg.get("confidence_threshold", 0.3),
+        )
+        logger.info("MMPose not available — using MediaPipe fallback (single-person)")
 
     videos = discover_videos(raw_dir)
     if args.patient:
