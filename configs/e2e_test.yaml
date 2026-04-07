@@ -1,0 +1,93 @@
+# Melchior — E2E Pipeline Test Configuration
+# Overrides for testing with 7 video clips from data/video_clips/
+
+# Paths
+data_root: ./data
+raw_synced_dir: ./data/video_clips
+skeleton_2d_dir: ./data/skeleton_2d
+calibration_dir: ./data/calibration
+skeleton_3d_dir: ./data/skeleton_3d
+features_dir: ./data/features
+metadata_dir: ./data/metadata
+
+# Pose estimation
+pose:
+  model: rtmpose-l
+  detector: rtmdet-m
+  device: cuda:0
+  batch_size: 4
+  confidence_threshold: 0.3
+
+# SAM2 video object tracking
+tracking:
+  model: sam2_hiera_l
+  checkpoint: checkpoints/sam2_hiera_large.pt
+  device: cuda:0
+  mask_output_dir: data/processed/masks/
+  annotations_path: data/metadata/sam2_annotations.json
+
+# Person identification
+person_id:
+  method: mask_guided
+  min_height_ratio: 1.3
+  fallback: center_position
+
+# Camera calibration
+calibration:
+  method: human_pose_calibration
+  min_visible_joints: 8
+  ransac_threshold: 5.0
+  num_calibration_frames: 50
+
+# 3D triangulation
+triangulation:
+  method: dlt
+  min_views: 2
+  reprojection_threshold: 15.0
+  bone_length_filter: true
+
+# Feature extraction
+features:
+  wfi_window_size: 15
+  contact_threshold_m: 0.15
+  walker_proximity_threshold_px: 30
+  fps: 30
+
+# Model
+model:
+  stgcn:
+    num_layers: 3
+    channels: [3, 64, 64, 128]
+    temporal_kernel: 9
+    dropout: 0.3
+    num_joints: 17
+  fusion:
+    hidden_dim: 64
+    dropout: 0.3
+  skeleton_feature_dim: 15
+  interaction_feature_dim: 10
+  context_vector_dim: 18
+  walker_feature_dim: 5
+  movement_quality_dim: 6
+
+# Training — reduced for tiny test dataset
+training:
+  epochs: 30
+  batch_size: 4
+  lr: 0.001
+  weight_decay: 0.0001
+  scheduler: cosine
+  patience: 10
+  cv_folds: 2
+  class_weight: balanced
+
+# Visualization
+visualization:
+  output_dir: outputs/verification_2d
+  confidence_threshold: 0.3
+  mask_alpha: 0.3
+  samples_per_level: 2
+
+# GPU
+device: cuda
+num_gpus: 1
