@@ -614,8 +614,12 @@ class HierarchicalTrainer:
 
         return results
 
-    def train_all(self):
+    def train_all(self, fixed_split=None):
         """Train all 3 hierarchical stages sequentially.
+
+        Args:
+            fixed_split: optional dict with 'train', 'val', 'test' patient
+                lists. Passed to each train_stage() call.
 
         Returns:
             dict with results for each stage.
@@ -627,13 +631,13 @@ class HierarchicalTrainer:
         all_results = {}
 
         # Stage 1: Ambulatory vs Non-ambulatory
-        all_results["stage1"] = self.train_stage("stage1")
+        all_results["stage1"] = self.train_stage("stage1", fixed_split=fixed_split)
 
         # Stage 2-A: L1 vs L2 vs L3-L4 (ambulatory branch)
-        all_results["stage2a"] = self.train_stage("stage2a")
+        all_results["stage2a"] = self.train_stage("stage2a", fixed_split=fixed_split)
 
         # Stage 2-B: L3-L4 vs L5 (non-ambulatory branch)
-        all_results["stage2b"] = self.train_stage("stage2b")
+        all_results["stage2b"] = self.train_stage("stage2b", fixed_split=fixed_split)
 
         elapsed = time.time() - start
         logger.info("Total training time: %.1f minutes", elapsed / 60)
